@@ -1,0 +1,10 @@
+{
+    "loginTitle": "Admin Login",
+    "dashboard": "Dashboard",
+    "events": "Events",
+    "settings": "Settings",
+    "paymentInfo": "Payment Settings",
+    "changePassword": "Change Password",
+    "gmailAuth": "Gmail Authentication",
+    "menu": "Menu"
+}

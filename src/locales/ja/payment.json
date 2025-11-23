@@ -1,0 +1,17 @@
+{
+    "paypay": "PayPay",
+    "bank": "銀行振込",
+    "bankName": "銀行名",
+    "branchName": "支店名",
+    "accountType": "口座種別",
+    "accountNumber": "口座番号",
+    "accountHolder": "口座名義",
+    "apiKey": "APIキー",
+    "apiSecret": "APIシークレット",
+    "merchantId": "加盟店ID",
+    "configName": "設定名",
+    "configNamePlaceholder": "例: メインアカウント",
+    "saveFailed": "保存に失敗しました",
+    "addPaypay": "PayPayを追加",
+    "addBank": "銀行振込を追加"
+}

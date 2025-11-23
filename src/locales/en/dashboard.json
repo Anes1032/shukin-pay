@@ -1,0 +1,25 @@
+{
+    "selectEvent": "Select Event",
+    "addEvent": "Add Event",
+    "createEventTitle": "Create New Event",
+    "paymentInfoTitle": "Payment Settings",
+    "changePasswordTitle": "Change Password",
+    "gmailAuthTitle": "Gmail Authentication",
+    "paymentLink": "Payment Link",
+    "paymentUsers": "Payment Users",
+    "addUser": "Add User",
+    "noPaymentUsers": "No payment users",
+    "linkCopied": "✓ Link copied",
+    "table": {
+        "name": "Name",
+        "email": "Email",
+        "amount": "Amount",
+        "method": "Method",
+        "status": "Status"
+    },
+    "status": {
+        "paid": "Paid",
+        "unpaid": "Unpaid",
+        "pending": "Pending"
+    }
+}

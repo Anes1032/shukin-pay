@@ -1,0 +1,25 @@
+{
+    "selectEvent": "イベントを選択",
+    "addEvent": "イベント追加",
+    "createEventTitle": "新規イベント作成",
+    "paymentInfoTitle": "決済情報",
+    "changePasswordTitle": "パスワード変更",
+    "gmailAuthTitle": "Gmail認証",
+    "paymentLink": "決済リンク",
+    "paymentUsers": "決済ユーザー",
+    "addUser": "ユーザー追加",
+    "noPaymentUsers": "決済ユーザーがいません",
+    "linkCopied": "✓ リンクをコピーしました",
+    "table": {
+        "name": "氏名",
+        "email": "メールアドレス",
+        "amount": "金額",
+        "method": "決済方法",
+        "status": "状況"
+    },
+    "status": {
+        "paid": "済",
+        "unpaid": "未",
+        "pending": "確認中"
+    }
+}

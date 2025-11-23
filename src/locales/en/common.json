@@ -1,0 +1,16 @@
+{
+    "shukinPay": "Shukin Pay",
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "name": "Name",
+    "confirmDelete": "Are you sure you want to delete?"
+}

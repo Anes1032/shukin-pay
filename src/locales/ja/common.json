@@ -1,0 +1,16 @@
+{
+    "shukinPay": "集金Pay",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "submit": "送信",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "save": "保存",
+    "delete": "削除",
+    "edit": "編集",
+    "add": "追加",
+    "name": "名前",
+    "confirmDelete": "削除してもよろしいですか？"
+}

@@ -1,0 +1,10 @@
+{
+    "loginTitle": "管理画面ログイン",
+    "dashboard": "ダッシュボード",
+    "events": "イベント管理",
+    "settings": "設定",
+    "paymentInfo": "決済情報管理",
+    "changePassword": "パスワード変更",
+    "gmailAuth": "Gmail認証",
+    "menu": "メニュー"
+}

@@ -1,0 +1,17 @@
+{
+    "paypay": "PayPay",
+    "bank": "Bank Transfer",
+    "bankName": "Bank Name",
+    "branchName": "Branch Name",
+    "accountType": "Account Type",
+    "accountNumber": "Account Number",
+    "accountHolder": "Account Holder",
+    "apiKey": "API Key",
+    "apiSecret": "API Secret",
+    "merchantId": "Merchant ID",
+    "configName": "Config Name",
+    "configNamePlaceholder": "e.g. Main Account",
+    "saveFailed": "Failed to save",
+    "addPaypay": "Add PayPay",
+    "addBank": "Add Bank Transfer"
+}
