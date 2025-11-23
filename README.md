@@ -25,7 +25,7 @@ A payment collection management application for events. Supports PayPay and bank
 ### 1. Clone and Install
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Anes1032/shukin-pay
 cd shukin-pay
 yarn install
 ```
@@ -139,35 +139,6 @@ Open [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
 5. Configure Webhook URL in PayPay dashboard:
    ```
    https://your-domain.com/api/webhooks/paypay
-   ```
-
-## Deployment (Vercel)
-
-### 1. Push to GitHub
-
-```bash
-git add .
-git commit -m "Initial commit"
-git push origin main
-```
-
-### 2. Import to Vercel
-
-1. Go to [Vercel](https://vercel.com/)
-2. Click "New Project"
-3. Import your GitHub repository
-4. Add environment variables in project settings
-5. Deploy
-
-### 3. Post-Deployment Setup
-
-1. Update `NEXT_PUBLIC_APP_URL` to your Vercel domain
-2. Update `GMAIL_REDIRECT_URI` to include your domain
-3. Update PayPay Webhook URL in PayPay dashboard
-4. Run database setup:
-   ```bash
-   npx ts-node scripts/setup-db.ts
-   npx ts-node scripts/seed-admin.ts
    ```
 
 ## Environment Variables
