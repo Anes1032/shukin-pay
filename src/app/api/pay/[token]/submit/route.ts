@@ -137,25 +137,26 @@ export async function POST(
 
         const baseAmount = event.base_amount as number || 0;
         const conditions = JSON.parse(event.conditions_json as string || '[]');
-        let totalAmount = 0;
+        let totalAmount = baseAmount || 0;
 
         if (conditions.length === 0) {
-            totalAmount = baseAmount;
+            totalAmount = baseAmount || 0;
         } else if (selectedConditions && conditions.length > 0) {
-            const condition = conditions[0];
+            for (const condition of conditions) {
                 const selectedValue = selectedConditions[condition.id];
             
                 if (selectedValue !== undefined) {
-                if (condition.type === 'radio') {
-                    const option = condition.options.find((o: { value: string }) => o.value === selectedValue);
-                    if (option && option.priceModifier !== undefined) {
-                        totalAmount = option.priceModifier;
-                    }
-                } else if (condition.type === 'checkbox' && Array.isArray(selectedValue)) {
+                    if (condition.type === 'radio') {
+                        const option = condition.options.find((o: { value: string }) => o.value === selectedValue);
+                        if (option && option.priceModifier !== undefined) {
+                            totalAmount += option.priceModifier;
+                        }
+                    } else if (condition.type === 'checkbox' && Array.isArray(selectedValue)) {
                         for (const val of selectedValue) {
                             const opt = condition.options.find((o: { value: string }) => o.value === val);
-                        if (opt && opt.priceModifier !== undefined) {
+                            if (opt && opt.priceModifier !== undefined) {
                                 totalAmount += opt.priceModifier;
+                            }
                         }
                     }
                 }

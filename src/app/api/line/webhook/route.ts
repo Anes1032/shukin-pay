@@ -84,8 +84,11 @@ export async function POST(request: Request) {
                 console.log('Mention check:', {
                     LINE_OFFICIAL_USER_ID,
                     mentionees: messageWithMentions.mention?.mentionees,
+                    groupId,
+                    roomId,
                 });
 
+                const isGroupChat = groupId !== null || roomId !== null;
                 const mentionedMe = messageWithMentions.mention?.mentionees?.some(
                     (mentionees) => {
                         const isMatch = mentionees.type === 'user' && mentionees.userId === LINE_OFFICIAL_USER_ID;
@@ -94,10 +97,10 @@ export async function POST(request: Request) {
                     }
                 ) || false;
 
-                console.log('mentionedMe:', mentionedMe);
+                console.log('mentionedMe:', mentionedMe, 'isGroupChat:', isGroupChat);
 
-                if (!mentionedMe) {
-                    console.log('Not mentioned, skipping...');
+                if (isGroupChat && !mentionedMe) {
+                    console.log('Group chat without mention, skipping...');
                     continue;
                 }
 
@@ -169,18 +172,23 @@ export async function POST(request: Request) {
                     continue;
                 }
 
-                const cleanedText = messageTextWithoutMention.replace(/\s+/g, '').trim();
+                const textToCheck = isGroupChat ? messageTextWithoutMention : messageText;
+                const cleanedText = textToCheck.replace(/\s+/g, '').trim();
                 const isShukinOnly = cleanedText === '集金';
 
                 console.log('Message check:', { 
                     mentionedMe, 
                     messageText, 
                     messageTextWithoutMention,
+                    textToCheck,
                     cleanedText,
-                    isShukinOnly
+                    isShukinOnly,
+                    isGroupChat
                 });
 
-                if (mentionedMe && isShukinOnly) {
+                const shouldProcess = isGroupChat ? (mentionedMe && isShukinOnly) : isShukinOnly;
+
+                if (shouldProcess) {
                     const userResult = await db.execute({
                         sql: 'SELECT id FROM users WHERE line_user_id = ?',
                         args: [userId],
@@ -204,7 +212,7 @@ export async function POST(request: Request) {
                     const appUserId = userResult.rows[0].id as string;
 
                     try {
-                        const messageHistory = await getMessageHistory(groupId, roomId, 1);
+                        const messageHistory = await getMessageHistory(groupId, roomId, 1, userId);
 
                         if (messageHistory.length === 0) {
                             if (lineClient && replyToken) {
@@ -362,12 +370,23 @@ export async function POST(request: Request) {
                             }
                         }
                     }
-                } else if (mentionedMe) {
+                } else if (isGroupChat && mentionedMe) {
                     if (lineClient && replyToken) {
                         try {
                             await lineClient.replyMessage(replyToken, {
                                 type: 'text',
                                 text: '集金イベントを作成するには、以下のようにメンション付きで「集金」と送信してください。\n\n例: @集金Pay 集金\n\nトークルームの過去のメッセージから、イベント情報を自動で抽出して作成します。',
+                            });
+                        } catch (e) {
+                            console.error('Failed to send usage message:', e);
+                        }
+                    }
+                } else if (!isGroupChat && !isShukinOnly) {
+                    if (lineClient && replyToken) {
+                        try {
+                            await lineClient.replyMessage(replyToken, {
+                                type: 'text',
+                                text: '集金イベントを作成するには、「集金」と送信してください。\n\n過去のメッセージから、イベント情報を自動で抽出して作成します。',
                             });
                         } catch (e) {
                             console.error('Failed to send usage message:', e);

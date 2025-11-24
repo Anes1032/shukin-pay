@@ -31,26 +31,43 @@ export async function saveLineMessage(
 export async function getMessageHistory(
     groupId: string | null,
     roomId: string | null,
-    days: number = 1
+    days: number = 1,
+    userId: string | null = null
 ): Promise<string[]> {
     try {
         const sourceId = groupId || roomId;
-        if (!sourceId) return [];
-
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - days);
         const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
 
-        const result = await db.execute({
-            sql: `SELECT message_text, created_at
-                  FROM line_messages
-                  WHERE (group_id = ? OR room_id = ?)
-                    AND message_type = 'text'
-                    AND message_text IS NOT NULL
-                    AND DATE(created_at) >= ?
-                  ORDER BY created_at ASC`,
-            args: [sourceId, sourceId, cutoffDateStr],
-        });
+        let result;
+        if (sourceId) {
+            result = await db.execute({
+                sql: `SELECT message_text, created_at
+                      FROM line_messages
+                      WHERE (group_id = ? OR room_id = ?)
+                        AND message_type = 'text'
+                        AND message_text IS NOT NULL
+                        AND DATE(created_at) >= ?
+                      ORDER BY created_at ASC`,
+                args: [sourceId, sourceId, cutoffDateStr],
+            });
+        } else if (userId) {
+            result = await db.execute({
+                sql: `SELECT message_text, created_at
+                      FROM line_messages
+                      WHERE line_user_id = ?
+                        AND group_id IS NULL
+                        AND room_id IS NULL
+                        AND message_type = 'text'
+                        AND message_text IS NOT NULL
+                        AND DATE(created_at) >= ?
+                      ORDER BY created_at ASC`,
+                args: [userId, cutoffDateStr],
+            });
+        } else {
+            return [];
+        }
 
         return result.rows.map((row: any) => row.message_text as string);
     } catch (e) {

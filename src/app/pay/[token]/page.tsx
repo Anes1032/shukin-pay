@@ -164,33 +164,35 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
     const calculateTotal = () => {
         if (!event) return 0;
         
-        if (event.conditions.length === 0) {
-            return event.baseAmount || 0;
-        }
-
-        const condition = event.conditions[0];
-            const selected = selectedConditions[condition.id];
+        let total = event.baseAmount || 0;
         
-        if (!selected) {
-            return event.baseAmount || 0;
-        }
-
-            if (condition.type === 'radio') {
-            const option = condition.options.find(o => o.value === selected || (o as any).id === selected);
-            if (option) {
-                return option.priceModifier;
-            }
-            return event.baseAmount || 0;
-        } else if (condition.type === 'checkbox' && Array.isArray(selected)) {
-            let total = 0;
-            for (const val of selected) {
-                const option = condition.options.find(o => o.value === val || (o as any).id === val);
-                if (option) total += option.priceModifier;
-            }
+        if (event.conditions.length === 0) {
             return total;
         }
 
-        return event.baseAmount || 0;
+        for (const condition of event.conditions) {
+            const selected = selectedConditions[condition.id];
+            
+            if (!selected) {
+                continue;
+            }
+
+            if (condition.type === 'radio') {
+                const option = condition.options.find(o => o.value === selected || (o as any).id === selected);
+                if (option) {
+                    total += option.priceModifier;
+                }
+            } else if (condition.type === 'checkbox' && Array.isArray(selected)) {
+                for (const val of selected) {
+                    const option = condition.options.find(o => o.value === val || (o as any).id === val);
+                    if (option) {
+                        total += option.priceModifier;
+                    }
+                }
+            }
+        }
+
+        return total;
     };
 
     const handleConditionChange = (conditionId: string, value: string, type: 'radio' | 'checkbox') => {
