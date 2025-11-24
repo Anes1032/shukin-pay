@@ -76,11 +76,11 @@
     "lineLinkTitle": "LINE公式アカウント連携",
     "lineLinked": "✓ 連携済み",
     "lineLinkedDescription": "LINE公式アカウントと連携済みです。グループに招待して集金分析を自動化できます。",
-    "lineLinkDescription": "LINE公式アカウントと連携して、グループでの集金分析を自動化できます。",
+    "lineLinkDescription": "LINE公式アカウントと連携して、グループでの集金分析をAIが自動で行います。",
     "addLineAccount": "LINE公式アカウントを追加",
     "lineLinkNote": "リンクをクリックしてLINE公式アカウントを追加すると、自動的に連携されます。",
     "lineAlreadyAddedTitle": "既にLINE公式アカウントを追加済みの場合",
-    "lineAlreadyAddedDescription": "以下のトークンをLINE公式アカウントにメンション付きでメッセージとして送信すると、連携が完了します。",
+    "lineAlreadyAddedDescription": "以下のトークンをLINE公式アカウントに（グループチャットの場合はメンション付きで）メッセージとして送信すると、連携が完了します。",
     "copy": "コピー",
     "copied": "コピーしました"
 }
