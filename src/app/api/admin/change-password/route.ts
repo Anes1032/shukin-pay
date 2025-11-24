@@ -20,7 +20,7 @@ export async function POST(request: Request) {
         }
 
         const result = await db.execute({
-            sql: 'SELECT password_hash FROM admins WHERE id = ?',
+            sql: 'SELECT password_hash FROM users WHERE id = ?',
             args: [session.id],
         });
 
@@ -28,8 +28,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const admin = result.rows[0];
-        const isValid = await bcrypt.compare(currentPassword, admin.password_hash as string);
+        const user = result.rows[0];
+        const isValid = await bcrypt.compare(currentPassword, user.password_hash as string);
 
         if (!isValid) {
             return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 });
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         const newHash = await bcrypt.hash(newPassword, 10);
 
         await db.execute({
-            sql: 'UPDATE admins SET password_hash = ? WHERE id = ?',
+            sql: 'UPDATE users SET password_hash = ? WHERE id = ?',
             args: [newHash, session.id],
         });
 

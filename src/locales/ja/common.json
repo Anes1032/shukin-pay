@@ -2,8 +2,10 @@
     "shukinPay": "集金Pay",
     "login": "ログイン",
     "logout": "ログアウト",
+    "signup": "新規登録",
     "email": "メールアドレス",
     "password": "パスワード",
+    "confirmPassword": "パスワード（確認）",
     "submit": "送信",
     "cancel": "キャンセル",
     "close": "閉じる",
@@ -12,5 +14,13 @@
     "edit": "編集",
     "add": "追加",
     "name": "名前",
-    "confirmDelete": "削除してもよろしいですか？"
+    "confirmDelete": "削除してもよろしいですか？",
+    "passwordMismatch": "パスワードが一致しません",
+    "loginFailed": "ログインに失敗しました",
+    "signupFailed": "登録に失敗しました",
+    "anErrorOccurred": "エラーが発生しました",
+    "loggingIn": "ログイン中...",
+    "signingUp": "登録中...",
+    "alreadyHaveAccount": "既にアカウントをお持ちの方はこちら",
+    "dontHaveAccount": "アカウントをお持ちでない方はこちら"
 }

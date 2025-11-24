@@ -8,7 +8,7 @@ export async function GET() {
 
     try {
         const result = await db.execute({
-            sql: 'SELECT gmail_refresh_token, gmail_email FROM admins WHERE id = ?',
+            sql: 'SELECT gmail_refresh_token, gmail_email FROM users WHERE id = ?',
             args: [session.id],
         });
 
@@ -16,12 +16,12 @@ export async function GET() {
             return NextResponse.json({ connected: false });
         }
 
-        const admin = result.rows[0];
-        const connected = !!admin.gmail_refresh_token;
+        const user = result.rows[0];
+        const connected = !!user.gmail_refresh_token;
 
         return NextResponse.json({
             connected,
-            email: admin.gmail_email || null,
+            email: user.gmail_email || null,
         });
     } catch (e) {
         console.error('Failed to get Gmail status:', e);

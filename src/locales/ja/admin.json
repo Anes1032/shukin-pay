@@ -1,10 +1,13 @@
 {
     "loginTitle": "管理画面ログイン",
+    "signupTitle": "新規登録",
     "dashboard": "ダッシュボード",
     "events": "イベント管理",
     "settings": "設定",
     "paymentInfo": "決済情報管理",
     "changePassword": "パスワード変更",
     "gmailAuth": "Gmail認証",
-    "menu": "メニュー"
+    "lineAuth": "LINE連携",
+    "menu": "メニュー",
+    "eventPaymentSystem": "イベント決済管理システム"
 }

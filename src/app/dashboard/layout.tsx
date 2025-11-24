@@ -1,26 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import I18nProvider from '@/components/I18nProvider';
 import PaymentInfoModal from '@/components/modals/PaymentInfoModal';
 import PasswordModal from '@/components/modals/PasswordModal';
 import GmailModal from '@/components/modals/GmailModal';
+import LineModal from '@/components/modals/LineModal';
 
-export default function AdminLayout({
+export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const pathname = usePathname();
     const router = useRouter();
     const { t } = useTranslation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isGmailModalOpen, setIsGmailModalOpen] = useState(false);
+    const [isLineModalOpen, setIsLineModalOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -35,12 +36,8 @@ export default function AdminLayout({
 
     async function handleLogout() {
         await fetch('/api/auth/logout', { method: 'POST' });
-        router.push('/admin/login');
+        router.push('/login');
         router.refresh();
-    }
-
-    if (pathname === '/admin/login') {
-        return <I18nProvider>{children}</I18nProvider>;
     }
 
     return (
@@ -48,7 +45,7 @@ export default function AdminLayout({
             <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
                 <header className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200/50 sticky top-0 z-40">
                     <div className="flex items-center justify-between px-6 py-4">
-                        <Link href="/admin/dashboard" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all">
+                        <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all">
                             {t('shukinPay', { ns: 'common' })}
                         </Link>
                         <div ref={menuRef} className="relative">
@@ -77,6 +74,13 @@ export default function AdminLayout({
                                     >
                                         <span className="text-xl">📧</span>
                                         {t('gmailAuth', { ns: 'admin' })}
+                                    </button>
+                                    <button
+                                        className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3"
+                                        onClick={() => { setIsLineModalOpen(true); setIsMenuOpen(false); }}
+                                    >
+                                        <span className="text-xl">💬</span>
+                                        {t('lineAuth', { ns: 'admin' })}
                                     </button>
                                     <button
                                         className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3"
@@ -113,6 +117,11 @@ export default function AdminLayout({
                 <GmailModal
                     isOpen={isGmailModalOpen}
                     onClose={() => setIsGmailModalOpen(false)}
+                />
+
+                <LineModal
+                    isOpen={isLineModalOpen}
+                    onClose={() => setIsLineModalOpen(false)}
                 />
             </div>
         </I18nProvider>

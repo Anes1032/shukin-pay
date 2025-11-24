@@ -15,7 +15,15 @@ export async function GET(
 
     try {
         const rs = await db.execute({
-            sql: 'SELECT * FROM payment_users WHERE event_id = ? ORDER BY created_at DESC',
+            sql: `SELECT ps.*, pu.email, pu.name, pu.is_authenticated,
+                  CASE 
+                    WHEN ps.payment_details IS NOT NULL THEN json_extract(ps.payment_details, '$.paymentConfigId')
+                    ELSE NULL
+                  END as payment_config_id
+                  FROM payment_status ps
+                  JOIN payment_users pu ON ps.payment_user_id = pu.id
+                  WHERE ps.event_id = ?
+                  ORDER BY ps.created_at DESC`,
             args: [id],
         });
         return NextResponse.json(rs.rows);
@@ -36,40 +44,72 @@ export async function POST(
 
     try {
         const body = await request.json();
-        const { email, name, amountDue, skipAuth, sendEmail } = body;
+        const { email, name, amountDue, skipAuth, sendEmail: shouldSendEmail } = body;
 
         if (!email) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
 
-        const existingUser = await db.execute({
-            sql: 'SELECT id FROM payment_users WHERE event_id = ? AND email = ?',
+        // Check if payment_status already exists for this event and email
+        const existingStatus = await db.execute({
+            sql: `SELECT ps.id FROM payment_status ps
+                  JOIN payment_users pu ON ps.payment_user_id = pu.id
+                  WHERE ps.event_id = ? AND pu.email = ?`,
             args: [eventId, email],
         });
 
-        if (existingUser.rows.length > 0) {
-            return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+        if (existingStatus.rows.length > 0) {
+            return NextResponse.json({ error: 'User already exists for this event' }, { status: 400 });
         }
 
-        const userId = randomUUID();
-        const authToken = skipAuth ? null : randomUUID();
-
-        await db.execute({
-            sql: `INSERT INTO payment_users (id, event_id, email, name, amount_due, auth_token, is_authenticated)
-                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            args: [userId, eventId, email, name || null, amountDue || null, authToken, skipAuth ? 1 : 0],
+        // Check if payment_user exists by email
+        let paymentUserId: string;
+        const existingUser = await db.execute({
+            sql: 'SELECT id, is_authenticated FROM payment_users WHERE email = ?',
+            args: [email],
         });
 
-        if (sendEmail && skipAuth) {
+        if (existingUser.rows.length > 0) {
+            // User already exists, use existing
+            paymentUserId = existingUser.rows[0].id as string;
+
+            // Update name if provided
+            if (name) {
+                await db.execute({
+                    sql: 'UPDATE payment_users SET name = ? WHERE id = ?',
+                    args: [name, paymentUserId],
+                });
+            }
+        } else {
+            // Create new payment_user
+            paymentUserId = randomUUID();
+            const authToken = skipAuth ? null : randomUUID();
+
+            await db.execute({
+                sql: `INSERT INTO payment_users (id, email, name, auth_token, is_authenticated)
+                      VALUES (?, ?, ?, ?, ?)`,
+                args: [paymentUserId, email, name || null, authToken, skipAuth ? 1 : 0],
+            });
+        }
+
+        // Create payment_status for this event
+        const statusId = randomUUID();
+        await db.execute({
+            sql: `INSERT INTO payment_status (id, payment_user_id, event_id, amount_due, status)
+                  VALUES (?, ?, ?, ?, 'UNPAID')`,
+            args: [statusId, paymentUserId, eventId, amountDue || null],
+        });
+
+        if (shouldSendEmail && skipAuth) {
             const eventResult = await db.execute({
-                sql: 'SELECT name, payment_token, admin_id FROM events WHERE id = ?',
+                sql: 'SELECT name, payment_token, user_id FROM events WHERE id = ?',
                 args: [eventId],
             });
 
             if (eventResult.rows.length > 0) {
                 const event = eventResult.rows[0];
                 await sendPaymentLinkEmail(
-                    event.admin_id as string,
+                    event.user_id as string,
                     email,
                     event.payment_token as string,
                     event.name as string
@@ -77,7 +117,7 @@ export async function POST(
             }
         }
 
-        return NextResponse.json({ success: true, userId, authToken });
+        return NextResponse.json({ success: true, statusId, paymentUserId });
     } catch (e) {
         console.error('Failed to create payment user:', e);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

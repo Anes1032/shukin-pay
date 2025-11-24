@@ -6,7 +6,7 @@ export async function GET(
     request: Request,
     { params }: { params: Promise<{ token: string; userId: string }> }
 ) {
-    const { token, userId } = await params;
+    const { token, userId: paymentUserId } = await params;
 
     try {
         const eventResult = await db.execute({
@@ -20,33 +20,28 @@ export async function GET(
 
         const event = eventResult.rows[0];
 
-        const userResult = await db.execute({
-            sql: `SELECT id, name, status, amount_due, selected_conditions, payment_method, 
-                  paypay_payment_id, payment_details
-                  FROM payment_users WHERE id = ? AND event_id = ?`,
-            args: [userId, event.id],
+        const statusResult = await db.execute({
+            sql: `SELECT ps.*, pu.name
+                  FROM payment_status ps
+                  JOIN payment_users pu ON ps.payment_user_id = pu.id
+                  WHERE ps.payment_user_id = ? AND ps.event_id = ?`,
+            args: [paymentUserId, event.id],
         });
 
-        if (userResult.rows.length === 0) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        if (statusResult.rows.length === 0) {
+            return NextResponse.json({
+                hasExistingPayment: false,
+            });
         }
 
-        const user = userResult.rows[0];
+        const status = statusResult.rows[0];
 
-        if (user.payment_method === 'PAYPAY' && user.paypay_payment_id) {
-            let paymentUrl: string | undefined;
-            
-            if (user.payment_details) {
-                try {
-                    const details = JSON.parse(user.payment_details as string);
-                    paymentUrl = details.paymentUrl;
-                } catch {
-                }
-            }
+        if (status.payment_method) {
+            let paymentInfo: Record<string, unknown> = {};
 
-            if (!paymentUrl && user.paypay_payment_id) {
+            if (status.payment_method === 'PAYPAY') {
                 const configResult = await db.execute({
-                    sql: `SELECT pc.config_json 
+                    sql: `SELECT pc.config_json
                           FROM events e
                           JOIN payment_configs pc ON json_extract(e.payment_config_ids, '$') LIKE '%' || pc.id || '%'
                           WHERE e.id = ? AND pc.type = 'PAYPAY'
@@ -56,67 +51,85 @@ export async function GET(
 
                 if (configResult.rows.length > 0) {
                     const configJson = JSON.parse(configResult.rows[0].config_json as string);
-                    const statusResult = await getPaymentStatus(
-                        configJson,
-                        user.paypay_payment_id as string
-                    );
-                    
-                    if (statusResult.status !== 'UNKNOWN' && statusResult.status !== 'ERROR') {
-                        return NextResponse.json({
-                            hasExistingPayment: true,
-                            paymentMethod: 'PAYPAY',
-                            paymentId: user.paypay_payment_id,
-                            status: user.status,
-                            amount: user.amount_due,
-                            name: user.name,
-                            selectedConditions: user.selected_conditions ? JSON.parse(user.selected_conditions as string) : {},
-                        });
-                    }
-                }
-            } else if (paymentUrl) {
-                return NextResponse.json({
-                    hasExistingPayment: true,
-                    paymentMethod: 'PAYPAY',
-                    paymentId: user.paypay_payment_id,
-                    paymentUrl: paymentUrl,
-                    status: user.status,
-                    amount: user.amount_due,
-                    name: user.name,
-                    selectedConditions: user.selected_conditions ? JSON.parse(user.selected_conditions as string) : {},
-                });
-            }
-        }
-
-        if (user.payment_method && user.payment_method !== 'PAYPAY') {
-            let paymentInfo: Record<string, unknown> = {};
-            
-            if (user.payment_method === 'PAYPAY_LINK') {
-                const configResult = await db.execute({
-                    sql: `SELECT pc.config_json 
-                          FROM events e
-                          JOIN payment_configs pc ON json_extract(e.payment_config_ids, '$') LIKE '%' || pc.id || '%'
-                          WHERE e.id = ? AND pc.type = 'PAYPAY_LINK'
-                          LIMIT 1`,
-                    args: [event.id],
-                });
-                
-                if (configResult.rows.length > 0) {
-                    const configJson = JSON.parse(configResult.rows[0].config_json as string);
                     paymentInfo = {
-                        type: 'PAYPAY_LINK',
+                        type: 'PAYPAY',
                         paymentLink: configJson.paymentLink,
                     };
                 }
-            } else if (user.payment_method === 'BANK') {
+            } else if (status.payment_method === 'PAYPAY_MERCHANT' && status.paypay_payment_id) {
+                let paymentUrl: string | undefined;
+
+                if (status.payment_details) {
+                    try {
+                        const details = JSON.parse(status.payment_details as string);
+                        paymentUrl = details.paymentUrl;
+                    } catch {
+                    }
+                }
+
+                if (!paymentUrl && status.paypay_payment_id) {
+                    const configResult = await db.execute({
+                        sql: `SELECT pc.config_json
+                              FROM events e
+                              JOIN payment_configs pc ON json_extract(e.payment_config_ids, '$') LIKE '%' || pc.id || '%'
+                              WHERE e.id = ? AND pc.type = 'PAYPAY_MERCHANT'
+                              LIMIT 1`,
+                        args: [event.id],
+                    });
+
+                    if (configResult.rows.length > 0) {
+                        const configJson = JSON.parse(configResult.rows[0].config_json as string);
+                        const paypayStatusResult = await getPaymentStatus(
+                            configJson,
+                            status.paypay_payment_id as string
+                        );
+
+                        if (paypayStatusResult.status !== 'UNKNOWN' && paypayStatusResult.status !== 'ERROR') {
+                            return NextResponse.json({
+                                hasExistingPayment: true,
+                                paymentMethod: 'PAYPAY_MERCHANT',
+                                paymentId: status.paypay_payment_id,
+                                status: status.status,
+                                amount: status.amount_due,
+                                name: status.name,
+                                selectedConditions: status.selected_conditions ? JSON.parse(status.selected_conditions as string) : {},
+                            });
+                        }
+                    }
+                } else if (paymentUrl) {
+                    paymentInfo = {
+                        type: 'PAYPAY_MERCHANT',
+                        paymentUrl: paymentUrl,
+                        paymentId: status.paypay_payment_id,
+                    };
+                }
+            } else if (status.payment_method === 'STRIPE') {
                 const configResult = await db.execute({
-                    sql: `SELECT pc.config_json 
+                    sql: `SELECT pc.config_json
+                          FROM events e
+                          JOIN payment_configs pc ON json_extract(e.payment_config_ids, '$') LIKE '%' || pc.id || '%'
+                          WHERE e.id = ? AND pc.type = 'STRIPE'
+                          LIMIT 1`,
+                    args: [event.id],
+                });
+
+                if (configResult.rows.length > 0) {
+                    const configJson = JSON.parse(configResult.rows[0].config_json as string);
+                    paymentInfo = {
+                        type: 'STRIPE',
+                        paymentLink: configJson.paymentLink,
+                    };
+                }
+            } else if (status.payment_method === 'BANK') {
+                const configResult = await db.execute({
+                    sql: `SELECT pc.config_json
                           FROM events e
                           JOIN payment_configs pc ON json_extract(e.payment_config_ids, '$') LIKE '%' || pc.id || '%'
                           WHERE e.id = ? AND pc.type = 'BANK'
                           LIMIT 1`,
                     args: [event.id],
                 });
-                
+
                 if (configResult.rows.length > 0) {
                     const configJson = JSON.parse(configResult.rows[0].config_json as string);
                     paymentInfo = {
@@ -128,16 +141,20 @@ export async function GET(
                         accountHolder: configJson.accountHolder,
                     };
                 }
+            } else if (status.payment_method === 'CASH') {
+                paymentInfo = {
+                    type: 'CASH',
+                };
             }
 
             return NextResponse.json({
                 hasExistingPayment: true,
-                paymentMethod: user.payment_method,
+                paymentMethod: status.payment_method,
                 paymentInfo: paymentInfo,
-                status: user.status,
-                amount: user.amount_due,
-                name: user.name,
-                selectedConditions: user.selected_conditions ? JSON.parse(user.selected_conditions as string) : {},
+                status: status.status,
+                amount: status.amount_due,
+                name: status.name,
+                selectedConditions: status.selected_conditions ? JSON.parse(status.selected_conditions as string) : {},
             });
         }
 
@@ -149,4 +166,3 @@ export async function GET(
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
-

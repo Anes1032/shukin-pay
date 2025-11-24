@@ -8,7 +8,7 @@ export async function POST() {
 
     try {
         await db.execute({
-            sql: 'UPDATE admins SET gmail_refresh_token = NULL, gmail_email = NULL WHERE id = ?',
+            sql: 'UPDATE users SET gmail_refresh_token = NULL, gmail_email = NULL WHERE id = ?',
             args: [session.id],
         });
 

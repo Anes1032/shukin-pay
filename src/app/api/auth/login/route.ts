@@ -13,7 +13,7 @@ export async function POST(request: Request) {
         }
 
         const rs = await db.execute({
-            sql: 'SELECT * FROM admins WHERE email = ?',
+            sql: 'SELECT * FROM users WHERE email = ?',
             args: [email],
         });
 

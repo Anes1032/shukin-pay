@@ -25,7 +25,7 @@ export default function PasswordModal({ isOpen, onClose }: Props) {
         const confirmPassword = formData.get('confirmPassword') as string;
 
         if (newPassword !== confirmPassword) {
-            setError('パスワードが一致しません');
+            setError(t('passwordMismatch', { ns: 'common' }));
             return;
         }
 
@@ -44,7 +44,7 @@ export default function PasswordModal({ isOpen, onClose }: Props) {
             (e.target as HTMLFormElement).reset();
         } else {
             const data = await res.json();
-            setError(data.error || 'パスワード変更に失敗しました');
+            setError(data.error || t('passwordChangeFailed', { ns: 'dashboard' }));
         }
     }
 
@@ -55,11 +55,11 @@ export default function PasswordModal({ isOpen, onClose }: Props) {
                     <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{error}</div>
                 )}
                 {success && (
-                    <div className="bg-green-50 text-green-600 p-3 rounded text-sm">パスワードを変更しました</div>
+                    <div className="bg-green-50 text-green-600 p-3 rounded text-sm">{t('passwordChanged', { ns: 'dashboard' })}</div>
                 )}
 
                 <div>
-                    <label className="block text-gray-700 mb-1">現在のパスワード</label>
+                    <label className="block text-gray-700 mb-1">{t('currentPassword', { ns: 'dashboard' })}</label>
                     <input
                         name="currentPassword"
                         type="password"
@@ -69,7 +69,7 @@ export default function PasswordModal({ isOpen, onClose }: Props) {
                 </div>
 
                 <div>
-                    <label className="block text-gray-700 mb-1">新しいパスワード</label>
+                    <label className="block text-gray-700 mb-1">{t('newPassword', { ns: 'dashboard' })}</label>
                     <input
                         name="newPassword"
                         type="password"
@@ -80,7 +80,7 @@ export default function PasswordModal({ isOpen, onClose }: Props) {
                 </div>
 
                 <div>
-                    <label className="block text-gray-700 mb-1">新しいパスワード（確認）</label>
+                    <label className="block text-gray-700 mb-1">{t('confirmNewPassword', { ns: 'dashboard' })}</label>
                     <input
                         name="confirmPassword"
                         type="password"

@@ -1,10 +1,13 @@
 {
     "loginTitle": "Admin Login",
+    "signupTitle": "Sign Up",
     "dashboard": "Dashboard",
     "events": "Events",
     "settings": "Settings",
     "paymentInfo": "Payment Settings",
     "changePassword": "Change Password",
     "gmailAuth": "Gmail Authentication",
-    "menu": "Menu"
+    "lineAuth": "LINE Integration",
+    "menu": "Menu",
+    "eventPaymentSystem": "Event Payment Management System"
 }

@@ -4,12 +4,17 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import EventModal from '@/components/modals/EventModal';
 import AddUserModal from '@/components/modals/AddUserModal';
+import PaymentUserModal from '@/components/modals/PaymentUserModal';
+import LineModal from '@/components/modals/LineModal';
 
 export default function DashboardPage() {
     const [events, setEvents] = useState<any[]>([]);
     const [selectedEvent, setSelectedEvent] = useState('');
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+    const [isPaymentUserModalOpen, setIsPaymentUserModalOpen] = useState(false);
+    const [isLineModalOpen, setIsLineModalOpen] = useState(false);
+    const [selectedPaymentUser, setSelectedPaymentUser] = useState<any>(null);
     const [paymentUsers, setPaymentUsers] = useState<any[]>([]);
     const { t } = useTranslation();
 
@@ -44,12 +49,71 @@ export default function DashboardPage() {
         }
     }
 
+    async function handleStatusChange(userId: string, newStatus: string) {
+        const user = paymentUsers.find(u => u.id === userId);
+        if (!user || user.status === 'PAID') {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/admin/events/${selectedEvent}/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (res.ok) {
+                loadPaymentUsers();
+            } else {
+                const data = await res.json();
+                alert(data.error || t('updateFailed', { ns: 'dashboard' }));
+            }
+        } catch {
+            alert(t('updateFailed', { ns: 'dashboard' }));
+        }
+    }
+
+    function openPaymentUserModal(user: any) {
+        setSelectedPaymentUser(user);
+        setIsPaymentUserModalOpen(true);
+    }
+
+    function closePaymentUserModal() {
+        setSelectedPaymentUser(null);
+        setIsPaymentUserModalOpen(false);
+    }
+
+    async function handleDelete(userId: string) {
+        const user = paymentUsers.find(u => u.id === userId);
+        if (!user || user.status === 'PAID') {
+            return;
+        }
+
+        if (!confirm(t('confirmDeleteUser', { ns: 'dashboard' }))) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/admin/events/${selectedEvent}/users/${userId}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                loadPaymentUsers();
+            } else {
+                const data = await res.json();
+                alert(data.error || t('deleteFailed', { ns: 'dashboard' }));
+            }
+        } catch {
+            alert(t('deleteFailed', { ns: 'dashboard' }));
+        }
+    }
+
     function copyPaymentLink() {
         const event = events.find(e => e.id === selectedEvent);
         if (event) {
             const url = `${window.location.origin}/pay/${event.payment_token}`;
             navigator.clipboard.writeText(url);
-            // Show success toast
             const toast = document.createElement('div');
             toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-in slide-in-from-bottom-5 duration-300';
             toast.textContent = t('linkCopied', { ns: 'dashboard' });
@@ -62,7 +126,6 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-6">
-            {/* Top Controls */}
             <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-gray-200/50">
                 <div className="flex flex-wrap items-center gap-4">
                     <select
@@ -84,7 +147,6 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* Payment Link Info */}
             {currentEvent && (
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200/50 shadow-sm">
                     <div className="flex items-start gap-3">
@@ -110,7 +172,6 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {/* Users Table */}
             <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg overflow-hidden border border-gray-200/50">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-700">{t('paymentUsers', { ns: 'dashboard' })}</h2>
@@ -143,30 +204,67 @@ export default function DashboardPage() {
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                                     {t('table.status', { ns: 'dashboard' })}
                                 </th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                                    {t('table.actions', { ns: 'dashboard' })}
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {paymentUsers.map(user => (
                                 <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="px-6 py-4 text-gray-800">{user.name}</td>
+                                    <td 
+                                        className="px-6 py-4 text-gray-800 cursor-pointer"
+                                        onClick={() => openPaymentUserModal(user)}
+                                    >
+                                        {user.name}
+                                    </td>
                                     <td className="px-6 py-4 text-gray-600">{user.email}</td>
                                     <td className="px-6 py-4 text-gray-800 font-semibold">
                                         ¥{user.amount_due?.toLocaleString() || 0}
                                     </td>
                                     <td className="px-6 py-4 text-gray-600">{user.payment_method || '-'}</td>
                                     <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${user.status === 'PAID' ? 'bg-green-100 text-green-700' :
+                                        {user.status === 'PAID' ? (
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                                ✓ {t('status.paid', { ns: 'dashboard' })}
+                                            </span>
+                                        ) : (
+                                            <select
+                                                value={user.status}
+                                                onChange={(e) => handleStatusChange(user.id, e.target.value)}
+                                                className={`text-xs font-semibold px-3 py-1 rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${
                                                 user.status === 'UNPAID' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
-                                            }`}>
-                                            {user.status === 'PAID' && '✓ '}
-                                            {user.status}
-                                        </span>
+                                                }`}
+                                            >
+                                                <option value="UNPAID">{t('status.unpaid', { ns: 'dashboard' })}</option>
+                                                <option value="PENDING">{t('status.pending', { ns: 'dashboard' })}</option>
+                                                <option value="PAID">{t('status.paid', { ns: 'dashboard' })}</option>
+                                            </select>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => openPaymentUserModal(user)}
+                                                className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+                                            >
+                                                ✏️
+                                            </button>
+                                            {user.status !== 'PAID' && (
+                                                <button
+                                                    onClick={() => handleDelete(user.id)}
+                                                    className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+                                                >
+                                                    🗑️
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                             {paymentUsers.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center">
+                                    <td colSpan={6} className="px-6 py-12 text-center">
                                         <div className="flex flex-col items-center gap-3 text-gray-400">
                                             <span className="text-4xl">📭</span>
                                             <p>{t('noPaymentUsers', { ns: 'dashboard' })}</p>
@@ -190,6 +288,33 @@ export default function DashboardPage() {
                 onClose={() => setIsAddUserModalOpen(false)}
                 onSuccess={() => loadPaymentUsers()}
                 eventId={selectedEvent}
+            />
+
+            {selectedPaymentUser && (
+                <PaymentUserModal
+                    isOpen={isPaymentUserModalOpen}
+                    onClose={closePaymentUserModal}
+                    onSuccess={() => {
+                        loadPaymentUsers();
+                        closePaymentUserModal();
+                    }}
+                    eventId={selectedEvent}
+                    userId={selectedPaymentUser.id}
+                    initialData={{
+                        name: selectedPaymentUser.name || '',
+                        email: selectedPaymentUser.email || '',
+                        amount_due: selectedPaymentUser.amount_due || 0,
+                        payment_method: selectedPaymentUser.payment_method || '',
+                        status: selectedPaymentUser.status || 'UNPAID',
+                        selected_conditions: selectedPaymentUser.selected_conditions || null,
+                        payment_config_id: selectedPaymentUser.payment_config_id || null,
+                    }}
+                />
+            )}
+
+            <LineModal
+                isOpen={isLineModalOpen}
+                onClose={() => setIsLineModalOpen(false)}
             />
         </div>
     );

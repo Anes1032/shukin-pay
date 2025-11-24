@@ -9,7 +9,7 @@ export async function GET() {
 
     try {
         const rs = await db.execute({
-            sql: 'SELECT * FROM events WHERE admin_id = ? ORDER BY created_at DESC',
+            sql: 'SELECT * FROM events WHERE user_id = ? ORDER BY created_at DESC',
             args: [session.id],
         });
         return NextResponse.json(rs.rows);
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         const paymentToken = randomUUID();
 
         await db.execute({
-            sql: `INSERT INTO events (id, admin_id, name, date, base_amount, conditions_json, payment_config_ids, payment_token)
+            sql: `INSERT INTO events (id, user_id, name, date, base_amount, conditions_json, payment_config_ids, payment_token)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             args: [
                 eventId,

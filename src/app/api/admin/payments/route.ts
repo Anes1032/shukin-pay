@@ -9,7 +9,7 @@ export async function GET() {
 
     try {
         const rs = await db.execute({
-            sql: 'SELECT * FROM payment_configs WHERE admin_id = ? ORDER BY created_at DESC',
+            sql: 'SELECT * FROM payment_configs WHERE user_id = ? ORDER BY created_at DESC',
             args: [session.id],
         });
         return NextResponse.json(rs.rows);
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         const { type, name, ...config } = body;
 
         await db.execute({
-            sql: 'INSERT INTO payment_configs (id, admin_id, type, name, config_json) VALUES (?, ?, ?, ?, ?)',
+            sql: 'INSERT INTO payment_configs (id, user_id, type, name, config_json) VALUES (?, ?, ?, ?, ?)',
             args: [randomUUID(), session.id, type, name, JSON.stringify(config)],
         });
         return NextResponse.json({ success: true });

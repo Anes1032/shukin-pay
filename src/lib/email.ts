@@ -17,6 +17,9 @@ const messages = {
         paymentSubject: (eventName: string) => `お支払いのお願い: ${eventName}`,
         paymentBody: (eventName: string, paymentUrl: string) =>
             `「${eventName}」へのお支払いをお願いいたします。\n\n以下のリンクから決済を行ってください。\n\n${paymentUrl}`,
+        paymentCompleteSubject: (eventName: string) => `決済完了のお知らせ: ${eventName}`,
+        paymentCompleteBody: (eventName: string, amount: number, paymentMethod: string, paidAt: string) =>
+            `「${eventName}」へのお支払いが完了いたしました。\n\n支払い金額: ¥${amount.toLocaleString()}\n支払い方法: ${paymentMethod}\n支払い完了日時: ${paidAt}\n\nご利用ありがとうございました。`,
     },
     en: {
         authSubject: 'Email Verification',
@@ -25,6 +28,9 @@ const messages = {
         paymentSubject: (eventName: string) => `Payment Request: ${eventName}`,
         paymentBody: (eventName: string, paymentUrl: string) =>
             `You have been invited to make a payment for "${eventName}".\n\nPlease click the following link to proceed:\n\n${paymentUrl}`,
+        paymentCompleteSubject: (eventName: string) => `Payment Completed: ${eventName}`,
+        paymentCompleteBody: (eventName: string, amount: number, paymentMethod: string, paidAt: string) =>
+            `Your payment for "${eventName}" has been completed.\n\nAmount: ¥${amount.toLocaleString()}\nPayment Method: ${paymentMethod}\nPaid At: ${paidAt}\n\nThank you for your payment.`,
     },
 };
 
@@ -32,10 +38,10 @@ function getMessages() {
     return messages[locale as keyof typeof messages] || messages.ja;
 }
 
-async function getGmailCredentials(adminId: string): Promise<{ refreshToken: string; email: string } | null> {
+async function getGmailCredentials(userId: string): Promise<{ refreshToken: string; email: string } | null> {
     const result = await db.execute({
-        sql: 'SELECT gmail_refresh_token, gmail_email FROM admins WHERE id = ?',
-        args: [adminId],
+        sql: 'SELECT gmail_refresh_token, gmail_email FROM users WHERE id = ?',
+        args: [userId],
     });
 
     if (result.rows.length === 0 || !result.rows[0].gmail_refresh_token) {
@@ -71,11 +77,11 @@ async function sendEmail(credentials: { refreshToken: string; email: string }, t
     });
 }
 
-export async function sendAuthEmail(adminId: string, toEmail: string, eventToken: string, authToken: string) {
-    const credentials = await getGmailCredentials(adminId);
+export async function sendAuthEmail(userId: string, toEmail: string, eventToken: string, authToken: string) {
+    const credentials = await getGmailCredentials(userId);
 
     if (!credentials) {
-        console.error('Gmail not configured for admin:', adminId);
+        console.error('Gmail not configured for user:', userId);
         return false;
     }
 
@@ -95,11 +101,11 @@ export async function sendAuthEmail(adminId: string, toEmail: string, eventToken
     }
 }
 
-export async function sendPaymentLinkEmail(adminId: string, toEmail: string, eventToken: string, eventName: string) {
-    const credentials = await getGmailCredentials(adminId);
+export async function sendPaymentLinkEmail(userId: string, toEmail: string, eventToken: string, eventName: string) {
+    const credentials = await getGmailCredentials(userId);
 
     if (!credentials) {
-        console.error('Gmail not configured for admin:', adminId);
+        console.error('Gmail not configured for user:', userId);
         return false;
     }
 
@@ -115,6 +121,34 @@ export async function sendPaymentLinkEmail(adminId: string, toEmail: string, eve
         return true;
     } catch (e) {
         console.error('Failed to send payment link email:', e);
+        return false;
+    }
+}
+
+export async function sendPaymentCompleteEmail(
+    userId: string,
+    toEmail: string,
+    eventName: string,
+    amount: number,
+    paymentMethod: string,
+    paidAt: string
+) {
+    const credentials = await getGmailCredentials(userId);
+
+    if (!credentials) {
+        console.error('Gmail not configured for user:', userId);
+        return false;
+    }
+
+    const msg = getMessages();
+    const subject = msg.paymentCompleteSubject(eventName);
+    const body = msg.paymentCompleteBody(eventName, amount, paymentMethod, paidAt);
+
+    try {
+        await sendEmail(credentials, toEmail, subject, body);
+        return true;
+    } catch (e) {
+        console.error('Failed to send payment complete email:', e);
         return false;
     }
 }

@@ -2,8 +2,10 @@
     "shukinPay": "Shukin Pay",
     "login": "Login",
     "logout": "Logout",
+    "signup": "Sign Up",
     "email": "Email",
     "password": "Password",
+    "confirmPassword": "Confirm Password",
     "submit": "Submit",
     "cancel": "Cancel",
     "close": "Close",
@@ -12,5 +14,13 @@
     "edit": "Edit",
     "add": "Add",
     "name": "Name",
-    "confirmDelete": "Are you sure you want to delete?"
+    "confirmDelete": "Are you sure you want to delete?",
+    "passwordMismatch": "Passwords do not match",
+    "loginFailed": "Login failed",
+    "signupFailed": "Signup failed",
+    "anErrorOccurred": "An error occurred",
+    "loggingIn": "Logging in...",
+    "signingUp": "Signing up...",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
 }

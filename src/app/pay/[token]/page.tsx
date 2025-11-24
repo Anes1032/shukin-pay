@@ -81,14 +81,14 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
         try {
             const res = await fetch(`/api/pay/${token}`);
             if (!res.ok) {
-                setError('Event not found');
+                setError(t('eventNotFound', { ns: 'pay' }));
                 setLoading(false);
                 return;
             }
             const data = await res.json();
             setEvent(data);
         } catch {
-            setError('Failed to load event');
+            setError(t('failedToLoadEvent', { ns: 'pay' }));
         } finally {
             setLoading(false);
         }
@@ -104,7 +104,7 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                 router.replace(`/pay/${token}`);
             }
         } catch {
-            setError('Verification failed');
+            setError(t('verificationFailed', { ns: 'pay' }));
         }
     };
 
@@ -155,7 +155,7 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                 setStep('emailSent');
             }
         } catch {
-            setError('Failed to process email');
+            setError(t('failedToProcessEmail', { ns: 'pay' }));
         } finally {
             setSubmitting(false);
         }
@@ -163,24 +163,34 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
 
     const calculateTotal = () => {
         if (!event) return 0;
-        let total = event.baseAmount;
-
-        for (const condition of event.conditions) {
-            const selected = selectedConditions[condition.id];
-            if (!selected) continue;
-
-            if (condition.type === 'radio') {
-                const option = condition.options.find(o => o.value === selected);
-                if (option) total += option.priceModifier;
-            } else if (condition.type === 'checkbox' && Array.isArray(selected)) {
-                for (const val of selected) {
-                    const option = condition.options.find(o => o.value === val);
-                    if (option) total += option.priceModifier;
-                }
-            }
+        
+        if (event.conditions.length === 0) {
+            return event.baseAmount || 0;
         }
 
-        return total;
+        const condition = event.conditions[0];
+            const selected = selectedConditions[condition.id];
+        
+        if (!selected) {
+            return event.baseAmount || 0;
+        }
+
+            if (condition.type === 'radio') {
+            const option = condition.options.find(o => o.value === selected || (o as any).id === selected);
+            if (option) {
+                return option.priceModifier;
+            }
+            return event.baseAmount || 0;
+        } else if (condition.type === 'checkbox' && Array.isArray(selected)) {
+            let total = 0;
+            for (const val of selected) {
+                const option = condition.options.find(o => o.value === val || (o as any).id === val);
+                if (option) total += option.priceModifier;
+            }
+            return total;
+        }
+
+        return event.baseAmount || 0;
     };
 
     const handleConditionChange = (conditionId: string, value: string, type: 'radio' | 'checkbox') => {
@@ -200,7 +210,7 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
     const handlePaymentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name || !selectedPaymentMethod) {
-            setError('Please fill in all required fields');
+            setError(t('fillRequiredFields', { ns: 'pay' }));
             return;
         }
 
@@ -208,6 +218,7 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
         setError('');
 
         try {
+            const selectedMethod = event?.paymentMethods.find(m => m.id === selectedPaymentMethod);
             const res = await fetch(`/api/pay/${token}/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -215,8 +226,8 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                     userId,
                     name,
                     selectedConditions,
-                    paymentMethod: event?.paymentMethods.find(m => m.id === selectedPaymentMethod)?.type,
-                    paymentConfigId: selectedPaymentMethod,
+                    paymentMethod: selectedMethod?.type,
+                    paymentConfigId: selectedMethod?.type === 'CASH' ? null : selectedPaymentMethod,
                 }),
             });
             const data = await res.json();
@@ -226,10 +237,10 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                 setFinalAmount(data.amount);
                 setStep('result');
             } else {
-                setError(data.error || 'Payment failed');
+                setError(data.error || t('paymentFailed', { ns: 'pay' }));
             }
         } catch {
-            setError('Failed to process payment');
+            setError(t('failedToProcessPayment', { ns: 'pay' }));
         } finally {
             setSubmitting(false);
         }
@@ -240,7 +251,7 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
-                    <p className="text-gray-600 font-medium">読み込み中...</p>
+                        <p className="text-gray-600 font-medium">{t('loading', { ns: 'pay' })}</p>
                 </div>
             </div>
         );
@@ -263,7 +274,6 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-8 px-4">
             <div className="max-w-2xl mx-auto">
                 <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden border border-white/20">
-                    {/* Header */}
                     <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6">
                         <h1 className="text-white text-2xl font-bold">{event?.name}</h1>
                         {event?.date && (
@@ -286,23 +296,22 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                             </div>
                         )}
 
-                        {/* Email Step */}
                         {step === 'email' && (
                             <form onSubmit={handleEmailSubmit} className="space-y-6">
                                 <div className="text-center mb-6">
                                     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <span className="text-3xl">📧</span>
                                     </div>
-                                    <p className="text-gray-700 font-medium mb-2">メールアドレス認証</p>
+                                    <p className="text-gray-700 font-medium mb-2">{t('emailAuth', { ns: 'pay' })}</p>
                                     <p className="text-gray-600 text-sm">
-                                        決済情報を保護するため、メールアドレスを入力してください
+                                        {t('emailAuthDescription', { ns: 'pay' })}
                                     </p>
                                 </div>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="your-email@example.com"
+                                    placeholder={t('emailPlaceholder', { ns: 'pay' })}
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                     required
                                 />
@@ -317,90 +326,88 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                             </svg>
-                                            処理中...
+                                            {t('processing', { ns: 'pay' })}
                                         </span>
-                                    ) : '次へ'}
+                                    ) : t('next', { ns: 'pay' })}
                                 </button>
                             </form>
                         )}
 
-                        {/* Email Sent Step */}
                         {step === 'emailSent' && (
                             <div className="text-center py-8">
                                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <span className="text-4xl">✉️</span>
                                 </div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-3">メールを送信しました</h2>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-3">{t('emailSentTitle', { ns: 'pay' })}</h2>
                                 <p className="text-gray-600 mb-2">
-                                    <span className="font-medium text-blue-600">{email}</span> 宛に
+                                    <span className="font-medium text-blue-600">{email}</span> {t('sentTo', { ns: 'pay' })}
                                 </p>
                                 <p className="text-gray-600 mb-6">
-                                    認証リンクを送信しました。メールを確認してください。
+                                    {t('emailSentDescription', { ns: 'pay' })}
                                 </p>
                                 <div className="bg-blue-50 rounded-xl p-4 text-sm text-gray-700">
-                                    💡 メールが届かない場合は、迷惑メールフォルダもご確認ください
+                                    {t('checkSpamFolder', { ns: 'pay' })}
                                 </div>
                             </div>
                         )}
 
-                        {/* Payment Step - Continuing...*/}
                         {step === 'payment' && event && (
                             <form onSubmit={handlePaymentSubmit} className="space-y-6">
-                                {/* Name Input */}
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        お名前 <span className="text-red-500">*</span>
+                                        {t('name', { ns: 'pay' })} <span className="text-red-500">{t('required', { ns: 'pay' })}</span>
                                     </label>
                                     <input
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        placeholder="山田 太郎"
+                                        placeholder={t('namePlaceholder', { ns: 'pay' })}
                                         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                         required
                                     />
                                 </div>
 
-                                {/* Conditions */}
                                 {event.conditions.map((condition) => (
                                     <div key={condition.id}>
                                         <label className="block text-sm font-semibold text-gray-700 mb-3">
                                             {condition.name}
                                         </label>
                                         <div className="space-y-2">
-                                            {condition.options.map((option) => (
+                                            {condition.options.map((option) => {
+                                                const optionValue = option.value || (option as any).id;
+                                                return (
                                                 <label
-                                                    key={option.value}
+                                                    key={optionValue}
                                                     className="flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer transition-all"
                                                 >
                                                     <input
                                                         type={condition.type}
                                                         name={condition.id}
-                                                        value={option.value}
+                                                        value={optionValue}
                                                         checked={
                                                             condition.type === 'radio'
-                                                                ? selectedConditions[condition.id] === option.value
-                                                                : ((selectedConditions[condition.id] as string[]) || []).includes(option.value)
+                                                                ? selectedConditions[condition.id] === optionValue
+                                                                : ((selectedConditions[condition.id] as string[]) || []).includes(optionValue)
                                                         }
-                                                        onChange={() => handleConditionChange(condition.id, option.value, condition.type)}
+                                                        onChange={() => handleConditionChange(condition.id, optionValue, condition.type)}
                                                         className="w-5 h-5 mr-3 text-blue-600 focus:ring-blue-500"
                                                     />
                                                     <span className="flex-1 font-medium text-gray-700">{option.label}</span>
                                                     {option.priceModifier !== 0 && (
                                                         <span className={`font-bold ${option.priceModifier > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                                            {option.priceModifier > 0 ? '+' : ''}{option.priceModifier.toLocaleString()}円
+                                                            {condition.type === 'checkbox' && option.priceModifier > 0 ? '+' : ''}{option.priceModifier.toLocaleString()}{t('yen', { ns: 'pay' })}
                                                         </span>
                                                     )}
                                                 </label>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 ))}
 
-                                {/* Payment Methods */}
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-3">
-                                        お支払い方法 <span className="text-red-500">*</span>
+                                        {t('paymentMethod', { ns: 'pay' })} <span className="text-red-500">{t('required', { ns: 'pay' })}</span>
                                     </label>
                                     <div className="space-y-2">
                                         {event.paymentMethods.map((method) => (
@@ -418,17 +425,20 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                                                 />
                                                 <span className="flex-1 font-medium text-gray-700">{method.name}</span>
                                                 <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600">
-                                                    {method.type === 'PAYPAY' ? '💳 PayPay' : '🏦 銀行振込'}
+                                                    {method.type === 'PAYPAY' ? t('paypayLabel', { ns: 'pay' }) : 
+                                                     method.type === 'PAYPAY_MERCHANT' ? t('paypayMerchantLabel', { ns: 'pay' }) : 
+                                                     method.type === 'STRIPE' ? t('stripeLabel', { ns: 'pay' }) : 
+                                                     method.type === 'CASH' ? t('cashLabel', { ns: 'pay' }) : 
+                                                     t('bankTransferLabel', { ns: 'pay' })}
                                                 </span>
                                             </label>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* Total Amount */}
                                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-lg font-semibold text-gray-700">お支払い金額</span>
+                                        <span className="text-lg font-semibold text-gray-700">{t('paymentAmount', { ns: 'pay' })}</span>
                                         <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                             ¥{calculateTotal().toLocaleString()}
                                         </span>
@@ -437,29 +447,43 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
 
                                 <button
                                     type="submit"
-                                    disabled={submitting}
+                                    disabled={submitting || calculateTotal() === 0}
                                     className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all shadow-lg hover:shadow-xl"
                                 >
-                                    {submitting ? '処理中...' : '決済に進む'}
+                                    {submitting ? t('processing', { ns: 'pay' }) : t('proceedToPayment', { ns: 'pay' })}
                                 </button>
                             </form>
                         )}
 
-                        {/* Result Step */}
                         {step === 'result' && paymentInfo && (
                             <div className="text-center space-y-6">
                                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8 border border-blue-200">
-                                    <p className="text-sm text-gray-600 mb-2">お支払い金額</p>
+                                    <p className="text-sm text-gray-600 mb-2">{t('paymentAmount', { ns: 'pay' })}</p>
                                     <p className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                         ¥{finalAmount.toLocaleString()}
                                     </p>
                                 </div>
 
-                                {/* PayPay Payment */}
-                                {paymentInfo.type === 'PAYPAY' && paymentInfo.paymentUrl && (
+                                {paymentInfo.type === 'PAYPAY' && paymentInfo.paymentLink && (
                                     <div>
                                         <p className="text-gray-600 mb-4">
-                                            下のボタンからPayPayでお支払いください
+                                            {t('paypayInstructions', { ns: 'pay' })}
+                                        </p>
+                                        <a
+                                            href={paymentInfo.paymentLink}
+                                            className="inline-block w-full py-4 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            {t('paypayButton', { ns: 'pay' })}
+                                        </a>
+                                    </div>
+                                )}
+
+                                {paymentInfo.type === 'PAYPAY_MERCHANT' && paymentInfo.paymentUrl && (
+                                    <div>
+                                        <p className="text-gray-600 mb-4">
+                                            {t('paypayMerchantInstructions', { ns: 'pay' })}
                                         </p>
                                         <a
                                             href={paymentInfo.paymentUrl}
@@ -467,36 +491,64 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                                             target="_blank"
                                             rel="noopener noreferrer"
                                         >
-                                            PayPayで支払う
+                                            {t('paypayButton', { ns: 'pay' })}
                                         </a>
                                     </div>
                                 )}
 
-                                {/* Bank Transfer */}
+                                {paymentInfo.type === 'STRIPE' && paymentInfo.paymentLink && (
+                                    <div>
+                                        <p className="text-gray-600 mb-4">
+                                            {t('stripeInstructions', { ns: 'pay' })}
+                                        </p>
+                                        <a
+                                            href={paymentInfo.paymentLink}
+                                            className="inline-block w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            {t('stripeButton', { ns: 'pay' })}
+                                        </a>
+                                    </div>
+                                )}
+
+                                {paymentInfo.type === 'CASH' && (
+                                    <div>
+                                        <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-4">
+                                            <div className="flex items-center justify-center mb-2">
+                                                <span className="text-4xl">💰</span>
+                                            </div>
+                                            <p className="text-gray-700 text-center font-medium">
+                                                {t('cashInstructions', { ns: 'pay' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {paymentInfo.type === 'BANK' && (
                                     <div className="text-left">
                                         <p className="text-gray-600 text-center mb-6">
-                                            下記の口座にお振込みください
+                                            {t('bankInstructions', { ns: 'pay' })}
                                         </p>
                                         <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 space-y-4 border border-gray-200">
                                             <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                                <span className="text-gray-600 font-medium">銀行名</span>
+                                                <span className="text-gray-600 font-medium">{t('bankName', { ns: 'pay' })}</span>
                                                 <span className="font-bold text-gray-800">{paymentInfo.bankName}</span>
                                             </div>
                                             <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                                <span className="text-gray-600 font-medium">支店名</span>
+                                                <span className="text-gray-600 font-medium">{t('branchName', { ns: 'pay' })}</span>
                                                 <span className="font-bold text-gray-800">{paymentInfo.branchName}</span>
                                             </div>
                                             <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                                <span className="text-gray-600 font-medium">口座種別</span>
+                                                <span className="text-gray-600 font-medium">{t('accountType', { ns: 'pay' })}</span>
                                                 <span className="font-bold text-gray-800">{paymentInfo.accountType}</span>
                                             </div>
                                             <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                                                <span className="text-gray-600 font-medium">口座番号</span>
+                                                <span className="text-gray-600 font-medium">{t('accountNumber', { ns: 'pay' })}</span>
                                                 <span className="font-bold text-gray-800">{paymentInfo.accountNumber}</span>
                                             </div>
                                             <div className="flex justify-between items-center py-2">
-                                                <span className="text-gray-600 font-medium">口座名義</span>
+                                                <span className="text-gray-600 font-medium">{t('accountHolder', { ns: 'pay' })}</span>
                                                 <span className="font-bold text-gray-800">{paymentInfo.accountHolder}</span>
                                             </div>
                                         </div>
@@ -510,16 +562,15 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                                     }}
                                     className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all"
                                 >
-                                    ← 決済方法を変更
+                                    {t('backToPayment', { ns: 'pay' })}
                                 </button>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className="text-center mt-8 text-gray-500 text-sm">
-                    <p>© 2025 集金Pay. All rights reserved.</p>
+                    <p>{t('copyright', { ns: 'pay' })}</p>
                 </div>
             </div>
         </div>

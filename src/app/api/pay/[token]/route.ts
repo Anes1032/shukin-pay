@@ -28,17 +28,25 @@ export async function GET(
             args: paymentConfigIds,
         });
 
+        const paymentMethods = configsResult.rows.map(c => ({
+            id: c.id,
+            type: c.type,
+            name: c.name,
+        }));
+
+        paymentMethods.push({
+            id: 'CASH',
+            type: 'CASH',
+            name: '現金支払い',
+        });
+
         return NextResponse.json({
             id: event.id,
             name: event.name,
             date: event.date,
             baseAmount: event.base_amount,
             conditions: JSON.parse(event.conditions_json as string || '[]'),
-            paymentMethods: configsResult.rows.map(c => ({
-                id: c.id,
-                type: c.type,
-                name: c.name,
-            })),
+            paymentMethods,
         });
     } catch (e) {
         console.error('Failed to get event:', e);

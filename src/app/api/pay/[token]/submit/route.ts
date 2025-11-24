@@ -10,9 +10,14 @@ export async function POST(
 
     try {
         const body = await request.json();
-        const { userId, name, selectedConditions, paymentMethod, paymentConfigId } = body;
+        const { userId, paymentUserId, name, selectedConditions, paymentMethod, paymentConfigId } = body;
+        const actualPaymentUserId = paymentUserId || userId;
 
-        if (!userId || !name || !paymentMethod || !paymentConfigId) {
+        if (!actualPaymentUserId || !name || !paymentMethod) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        if (paymentMethod !== 'CASH' && !paymentConfigId) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
@@ -28,8 +33,8 @@ export async function POST(
         const event = eventResult.rows[0];
 
         const userResult = await db.execute({
-            sql: 'SELECT id, is_authenticated, status, payment_method, paypay_payment_id, payment_details FROM payment_users WHERE id = ? AND event_id = ?',
-            args: [userId, event.id],
+            sql: 'SELECT id, is_authenticated FROM payment_users WHERE id = ?',
+            args: [actualPaymentUserId],
         });
 
         if (userResult.rows.length === 0) {
@@ -42,10 +47,35 @@ export async function POST(
             return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
         }
 
-        if (user.status === 'PAID') {
+        let statusResult = await db.execute({
+            sql: 'SELECT id, status, payment_method, paypay_payment_id, payment_details FROM payment_status WHERE payment_user_id = ? AND event_id = ?',
+            args: [actualPaymentUserId, event.id],
+        });
+
+        let statusId: string;
+        if (statusResult.rows.length === 0) {
+            statusId = crypto.randomUUID();
+            await db.execute({
+                sql: `INSERT INTO payment_status (id, payment_user_id, event_id, status) VALUES (?, ?, ?, 'UNPAID')`,
+                args: [statusId, actualPaymentUserId, event.id],
+            });
+            statusResult = await db.execute({
+                sql: 'SELECT id, status, payment_method, paypay_payment_id, payment_details FROM payment_status WHERE id = ?',
+                args: [statusId],
+            });
+        }
+
+        const status = statusResult.rows[0];
+        statusId = status.id as string;
+
+        if (status.status === 'PAID') {
             return NextResponse.json({ error: 'Already paid' }, { status: 400 });
         }
 
+        let config: any = null;
+        let configJson: any = null;
+        
+        if (paymentMethod !== 'CASH') {
         const configResult = await db.execute({
             sql: 'SELECT type, config_json FROM payment_configs WHERE id = ?',
             args: [paymentConfigId],
@@ -55,15 +85,16 @@ export async function POST(
             return NextResponse.json({ error: 'Payment config not found' }, { status: 404 });
         }
 
-        const config = configResult.rows[0];
-        const configJson = JSON.parse(config.config_json as string);
+            config = configResult.rows[0];
+            configJson = JSON.parse(config.config_json as string);
+        }
 
-        if (config.type === 'PAYPAY' && user.payment_method === 'PAYPAY' && user.paypay_payment_id) {
+        if (config && config.type === 'PAYPAY_MERCHANT' && status.payment_method === 'PAYPAY_MERCHANT' && status.paypay_payment_id) {
             let paymentUrl: string | undefined;
-            
-            if (user.payment_details) {
+
+            if (status.payment_details) {
                 try {
-                    const details = JSON.parse(user.payment_details as string);
+                    const details = JSON.parse(status.payment_details as string);
                     paymentUrl = details.paymentUrl;
                 } catch {
                 }
@@ -71,11 +102,34 @@ export async function POST(
 
             return NextResponse.json({
                 success: true,
-                amount: user.amount_due as number || 0,
+                amount: status.amount_due as number || 0,
+                paymentInfo: {
+                    type: 'PAYPAY_MERCHANT',
+                    paymentUrl: paymentUrl,
+                    paymentId: status.paypay_payment_id,
+                },
+                existingPayment: true,
+            });
+        }
+
+        if (false) {
+            let paymentUrl: string | undefined;
+
+            if (status.payment_details) {
+                try {
+                    const details = JSON.parse(status.payment_details as string);
+                    paymentUrl = details.paymentUrl;
+                } catch {
+                }
+            }
+
+            return NextResponse.json({
+                success: true,
+                amount: status.amount_due as number || 0,
                 paymentInfo: {
                     type: 'PAYPAY',
                     paymentUrl: paymentUrl,
-                    paymentId: user.paypay_payment_id,
+                    paymentId: status.paypay_payment_id,
                 },
                 existingPayment: true,
             });
@@ -83,22 +137,25 @@ export async function POST(
 
         const baseAmount = event.base_amount as number || 0;
         const conditions = JSON.parse(event.conditions_json as string || '[]');
-        let totalAmount = baseAmount;
+        let totalAmount = 0;
 
-        if (selectedConditions && conditions.length > 0) {
-            for (const condition of conditions) {
+        if (conditions.length === 0) {
+            totalAmount = baseAmount;
+        } else if (selectedConditions && conditions.length > 0) {
+            const condition = conditions[0];
                 const selectedValue = selectedConditions[condition.id];
+            
                 if (selectedValue !== undefined) {
+                if (condition.type === 'radio') {
                     const option = condition.options.find((o: { value: string }) => o.value === selectedValue);
-                    if (option && option.priceModifier) {
-                        totalAmount += option.priceModifier;
+                    if (option && option.priceModifier !== undefined) {
+                        totalAmount = option.priceModifier;
                     }
-                    if (Array.isArray(selectedValue)) {
+                } else if (condition.type === 'checkbox' && Array.isArray(selectedValue)) {
                         for (const val of selectedValue) {
                             const opt = condition.options.find((o: { value: string }) => o.value === val);
-                            if (opt && opt.priceModifier) {
+                        if (opt && opt.priceModifier !== undefined) {
                                 totalAmount += opt.priceModifier;
-                            }
                         }
                     }
                 }
@@ -107,29 +164,59 @@ export async function POST(
 
         let paymentInfo: Record<string, unknown> = {};
 
-        if (config.type === 'PAYPAY') {
+        await db.execute({
+            sql: 'UPDATE payment_users SET name = ? WHERE id = ?',
+            args: [name, actualPaymentUserId],
+        });
+
+        if (paymentMethod === 'CASH') {
+            paymentInfo = {
+                type: 'CASH',
+            };
+
+            await db.execute({
+                sql: `UPDATE payment_status SET
+                      amount_due = ?, selected_conditions = ?,
+                      payment_method = ?, paypay_payment_id = NULL, payment_details = NULL, status = 'PENDING'
+                      WHERE id = ?`,
+                args: [totalAmount, JSON.stringify(selectedConditions), 'CASH', statusId],
+            });
+        } else if (config && config.type === 'PAYPAY') {
+            paymentInfo = {
+                type: 'PAYPAY',
+                paymentLink: configJson.paymentLink,
+            };
+
+            await db.execute({
+                sql: `UPDATE payment_status SET
+                      amount_due = ?, selected_conditions = ?,
+                      payment_method = ?, paypay_payment_id = NULL, payment_details = NULL, status = 'PENDING'
+                      WHERE id = ?`,
+                args: [totalAmount, JSON.stringify(selectedConditions), 'PAYPAY', statusId],
+            });
+        } else if (config && config.type === 'PAYPAY_MERCHANT') {
             const paypayResult = await createPayPayPayment(
                 configJson,
-                userId,
+                statusId,
                 totalAmount,
                 `Payment for event`
             );
 
             if (!paypayResult.success) {
-                if (paypayResult.error?.includes('DUPLICATE_DYNAMIC_QR_REQUEST') || 
+                if (paypayResult.error?.includes('DUPLICATE_DYNAMIC_QR_REQUEST') ||
                     paypayResult.error?.includes('Duplicate')) {
-                    const existingUserResult = await db.execute({
-                        sql: 'SELECT paypay_payment_id, payment_details FROM payment_users WHERE id = ?',
-                        args: [userId],
+                    const existingStatusResult = await db.execute({
+                        sql: 'SELECT paypay_payment_id, payment_details FROM payment_status WHERE id = ?',
+                        args: [statusId],
                     });
-                    
-                    if (existingUserResult.rows.length > 0) {
-                        const existingUser = existingUserResult.rows[0];
+
+                    if (existingStatusResult.rows.length > 0) {
+                        const existingStatus = existingStatusResult.rows[0];
                         let paymentUrl: string | undefined;
-                        
-                        if (existingUser.payment_details) {
+
+                        if (existingStatus.payment_details) {
                             try {
-                                const details = JSON.parse(existingUser.payment_details as string);
+                                const details = JSON.parse(existingStatus.payment_details as string);
                                 paymentUrl = details.paymentUrl;
                             } catch {
                             }
@@ -139,22 +226,22 @@ export async function POST(
                             success: true,
                             amount: totalAmount,
                             paymentInfo: {
-                                type: 'PAYPAY',
+                                type: 'PAYPAY_MERCHANT',
                                 paymentUrl: paymentUrl,
-                                paymentId: existingUser.paypay_payment_id,
+                                paymentId: existingStatus.paypay_payment_id,
                             },
                             existingPayment: true,
                         });
                     }
                 }
-                
-                return NextResponse.json({ 
-                    error: paypayResult.error || 'Failed to create PayPay payment' 
+
+                return NextResponse.json({
+                    error: paypayResult.error || 'Failed to create PayPay payment'
                 }, { status: 500 });
             }
 
             paymentInfo = {
-                type: 'PAYPAY',
+                type: 'PAYPAY_MERCHANT',
                 paymentUrl: paypayResult.paymentUrl,
                 paymentId: paypayResult.paymentId,
             };
@@ -165,26 +252,26 @@ export async function POST(
             });
 
             await db.execute({
-                sql: `UPDATE payment_users SET
-                      name = ?, amount_due = ?, selected_conditions = ?,
+                sql: `UPDATE payment_status SET
+                      amount_due = ?, selected_conditions = ?,
                       payment_method = ?, paypay_payment_id = ?, payment_details = ?, status = 'PENDING'
                       WHERE id = ?`,
-                args: [name, totalAmount, JSON.stringify(selectedConditions), 'PAYPAY', paypayResult.paymentId, paymentDetails, userId],
+                args: [totalAmount, JSON.stringify(selectedConditions), 'PAYPAY_MERCHANT', paypayResult.paymentId || null, paymentDetails, statusId],
             });
-        } else if (config.type === 'PAYPAY_LINK') {
+        } else if (config && config.type === 'STRIPE') {
             paymentInfo = {
-                type: 'PAYPAY_LINK',
+                type: 'STRIPE',
                 paymentLink: configJson.paymentLink,
             };
 
             await db.execute({
-                sql: `UPDATE payment_users SET
-                      name = ?, amount_due = ?, selected_conditions = ?,
+                sql: `UPDATE payment_status SET
+                      amount_due = ?, selected_conditions = ?,
                       payment_method = ?, paypay_payment_id = NULL, payment_details = NULL, status = 'PENDING'
                       WHERE id = ?`,
-                args: [name, totalAmount, JSON.stringify(selectedConditions), 'PAYPAY_LINK', userId],
+                args: [totalAmount, JSON.stringify(selectedConditions), 'STRIPE', statusId],
             });
-        } else if (config.type === 'BANK') {
+        } else if (config && config.type === 'BANK') {
             paymentInfo = {
                 type: 'BANK',
                 bankName: configJson.bankName,
@@ -195,11 +282,11 @@ export async function POST(
             };
 
             await db.execute({
-                sql: `UPDATE payment_users SET
-                      name = ?, amount_due = ?, selected_conditions = ?,
+                sql: `UPDATE payment_status SET
+                      amount_due = ?, selected_conditions = ?,
                       payment_method = ?, paypay_payment_id = NULL, payment_details = NULL, status = 'PENDING'
                       WHERE id = ?`,
-                args: [name, totalAmount, JSON.stringify(selectedConditions), 'BANK', userId],
+                args: [totalAmount, JSON.stringify(selectedConditions), 'BANK', statusId],
             });
         }
 

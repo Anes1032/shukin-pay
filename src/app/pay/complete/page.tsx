@@ -1,6 +1,11 @@
 'use client';
 
-export default function PaymentCompletePage() {
+import { useTranslation } from 'react-i18next';
+import I18nProvider from '@/components/I18nProvider';
+
+function PaymentCompletePageContent() {
+    const { t } = useTranslation();
+
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 flex items-center justify-center">
             <div className="max-w-md w-full">
@@ -11,18 +16,26 @@ export default function PaymentCompletePage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h1 className="text-white text-xl font-bold">決済処理が完了しました</h1>
+                        <h1 className="text-white text-xl font-bold">{t('paymentComplete', { ns: 'pay' })}</h1>
                     </div>
                     <div className="p-6 text-center">
                         <p className="text-gray-600">
-                            ご利用ありがとうございました。
+                            {t('thankYou', { ns: 'pay' })}
                         </p>
                         <p className="text-gray-500 text-sm mt-4">
-                            このページを閉じてください。
+                            {t('closePage', { ns: 'pay' })}
                         </p>
                     </div>
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function PaymentCompletePage() {
+    return (
+        <I18nProvider>
+            <PaymentCompletePageContent />
+        </I18nProvider>
     );
 }

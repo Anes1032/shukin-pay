@@ -1,23 +1,9 @@
-const { createClient } = require('@libsql/client');
-const dotenv = require('dotenv');
+// Initial database schema migration
+// Created: 2025-11-24
 
-dotenv.config();
-
-const url = process.env.TURSO_DATABASE_URL;
-const authToken = process.env.TURSO_AUTH_TOKEN;
-
-if (!url) {
-  console.error('TURSO_DATABASE_URL is not defined');
-  process.exit(1);
-}
-
-const db = createClient({
-  url,
-  authToken,
-});
-
-const schema = [
-  `CREATE TABLE IF NOT EXISTS admins (
+module.exports = {
+  up: [
+  `CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
@@ -27,16 +13,16 @@ const schema = [
   )`,
   `CREATE TABLE IF NOT EXISTS payment_configs (
     id TEXT PRIMARY KEY,
-    admin_id TEXT NOT NULL,
-    type TEXT NOT NULL, -- 'PAYPAY' or 'BANK'
+    user_id TEXT NOT NULL,
+    type TEXT NOT NULL, -- 'PAYPAY', 'PAYPAY_MERCHANT', or 'BANK'
     name TEXT NOT NULL,
     config_json TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (admin_id) REFERENCES admins(id)
+    FOREIGN KEY (user_id) REFERENCES users(id)
   )`,
   `CREATE TABLE IF NOT EXISTS events (
     id TEXT PRIMARY KEY,
-    admin_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     name TEXT NOT NULL,
     date DATETIME,
     payment_config_ids TEXT, -- JSON array of config IDs
@@ -45,23 +31,30 @@ const schema = [
     payment_token TEXT UNIQUE NOT NULL,
     is_active BOOLEAN DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (admin_id) REFERENCES admins(id)
+    FOREIGN KEY (user_id) REFERENCES users(id)
   )`,
   `CREATE TABLE IF NOT EXISTS payment_users (
     id TEXT PRIMARY KEY,
-    event_id TEXT NOT NULL,
-    email TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
     name TEXT,
+    auth_token TEXT UNIQUE,
+    is_authenticated INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS payment_status (
+    id TEXT PRIMARY KEY,
+    payment_user_id TEXT NOT NULL,
+    event_id TEXT NOT NULL,
     status TEXT DEFAULT 'UNPAID',
     amount_due INTEGER,
     selected_conditions TEXT,
     payment_method TEXT,
     payment_details TEXT,
-    auth_token TEXT UNIQUE,
-    is_authenticated INTEGER DEFAULT 0,
     paypay_payment_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (event_id) REFERENCES events(id)
+    FOREIGN KEY (payment_user_id) REFERENCES payment_users(id),
+    FOREIGN KEY (event_id) REFERENCES events(id),
+    UNIQUE(payment_user_id, event_id)
   )`,
   `CREATE TABLE IF NOT EXISTS auth_tokens (
     id TEXT PRIMARY KEY,
@@ -70,20 +63,14 @@ const schema = [
     expires_at DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`
-];
+  ],
+  down: [
+  'DROP TABLE IF EXISTS auth_tokens',
+  'DROP TABLE IF EXISTS payment_status',
+  'DROP TABLE IF EXISTS payment_users',
+  'DROP TABLE IF EXISTS events',
+  'DROP TABLE IF EXISTS payment_configs',
+  'DROP TABLE IF EXISTS users'
+  ]
+};
 
-async function setup() {
-  console.log('Setting up database...');
-  console.log('Connect db url:', url)
-  for (const query of schema) {
-    try {
-      await db.execute(query);
-      console.log('Executed:', query.split('(')[0]);
-    } catch (e) {
-      console.error('Error executing query:', e);
-    }
-  }
-  console.log('Database setup complete.');
-}
-
-setup();
