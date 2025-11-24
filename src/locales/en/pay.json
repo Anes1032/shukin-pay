@@ -57,5 +57,9 @@
     "yen": "yen",
     "paymentComplete": "Payment Completed",
     "thankYou": "Thank you for your payment.",
-    "closePage": "Please close this page."
+    "closePage": "Please close this page.",
+    "markComplete": "Mark as Paid",
+    "markingComplete": "Updating...",
+    "markCompleteFailed": "Failed to mark payment as complete",
+    "paymentMarkedComplete": "✓ Payment marked as complete"
 }

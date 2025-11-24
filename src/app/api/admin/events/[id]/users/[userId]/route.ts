@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { sendPaymentCompleteEmail } from '@/lib/email';
+import { getPaymentMethodLabel } from '@/lib/payment-methods';
 
 export async function PUT(
     request: Request,
@@ -112,23 +113,17 @@ export async function PUT(
                 if (paymentUserResult.rows.length > 0) {
                     const paymentUser = paymentUserResult.rows[0];
                     if (paymentUser.email && paymentUser.user_id) {
-                        const paymentMethodMap: Record<string, string> = {
-                            'PAYPAY': 'PayPay',
-                            'PAYPAY_MERCHANT': 'PayPay (加盟店)',
-                            'BANK': '銀行振込',
-                            'CASH': '現金支払い',
-                        };
-                        const paymentMethodName = paymentMethodMap[paymentUser.payment_method as string] || paymentUser.payment_method as string;
-                        const paidAt = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
-
-                        await sendPaymentCompleteEmail(
-                            paymentUser.user_id as string,
-                            paymentUser.email as string,
-                            paymentUser.event_name as string,
-                            paymentUser.amount_due as number,
-                            paymentMethodName,
-                            paidAt
-                        );
+                        // Email sending disabled to save email quota
+                        // const paymentMethodName = getPaymentMethodLabel(paymentUser.payment_method as string);
+                        // const paidAt = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+                        // await sendPaymentCompleteEmail(
+                        //     paymentUser.user_id as string,
+                        //     paymentUser.email as string,
+                        //     paymentUser.event_name as string,
+                        //     paymentUser.amount_due as number,
+                        //     paymentMethodName,
+                        //     paidAt
+                        // );
                     }
                 }
             }

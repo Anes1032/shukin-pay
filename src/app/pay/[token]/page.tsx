@@ -58,6 +58,8 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
 
     const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
     const [finalAmount, setFinalAmount] = useState(0);
+    const [paymentStatus, setPaymentStatus] = useState<string>('');
+    const [markingComplete, setMarkingComplete] = useState(false);
 
     useEffect(() => {
         fetchEvent();
@@ -74,6 +76,12 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
         const authToken = urlParams.get('token');
         if (authToken) {
             verifyAuth(authToken);
+        } else {
+            const userIdParam = urlParams.get('userId');
+            if (userIdParam) {
+                setUserId(userIdParam);
+                checkExistingPayment(userIdParam);
+            }
         }
     }, [token]);
 
@@ -118,6 +126,10 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
             const data = await res.json();
 
             if (data.hasExistingPayment) {
+                if (data.status === 'PAID') {
+                    router.push('/pay/complete');
+                    return;
+                }
                 setPaymentInfo(data.paymentInfo || {
                     type: data.paymentMethod,
                     paymentUrl: data.paymentUrl,
@@ -126,6 +138,7 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                 setFinalAmount(data.amount || 0);
                 setName(data.name || '');
                 setSelectedConditions(data.selectedConditions || {});
+                setPaymentStatus(data.status || '');
                 setStep('result');
             } else {
                 setStep('payment');
@@ -554,6 +567,47 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                                                 <span className="font-bold text-gray-800">{paymentInfo.accountHolder}</span>
                                             </div>
                                         </div>
+                                    </div>
+                                )}
+
+                                {paymentStatus !== 'PAID' && (
+                                    <button
+                                        onClick={async () => {
+                                            if (!userId) return;
+                                            setMarkingComplete(true);
+                                            setError('');
+                                            try {
+                                                const res = await fetch(`/api/pay/${token}/user/${userId}`, {
+                                                    method: 'PUT',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                });
+                                                const data = await res.json();
+                                                if (res.ok && data.success) {
+                                                    setPaymentStatus('PAID');
+                                                    setTimeout(() => {
+                                                        router.push('/pay/complete');
+                                                    }, 1000);
+                                                } else {
+                                                    setError(data.error || t('markCompleteFailed', { ns: 'pay' }));
+                                                }
+                                            } catch {
+                                                setError(t('markCompleteFailed', { ns: 'pay' }));
+                                            } finally {
+                                                setMarkingComplete(false);
+                                            }
+                                        }}
+                                        disabled={markingComplete}
+                                        className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg hover:shadow-xl mb-3"
+                                    >
+                                        {markingComplete ? t('markingComplete', { ns: 'pay' }) : t('markComplete', { ns: 'pay' })}
+                                    </button>
+                                )}
+
+                                {paymentStatus === 'PAID' && (
+                                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-3">
+                                        <p className="text-green-700 font-medium text-center">
+                                            {t('paymentMarkedComplete', { ns: 'pay' })}
+                                        </p>
                                     </div>
                                 )}
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { sendPaymentCompleteEmail } from '@/lib/email';
+// import { getPaymentMethodLabel } from '@/lib/payment-methods'; // For future email sending feature
 
 export async function POST(request: Request) {
     try {
@@ -34,23 +34,17 @@ export async function POST(request: Request) {
                 });
 
                 if (previousStatus !== 'PAID' && status.email && status.user_id) {
-                    const paymentMethodMap: Record<string, string> = {
-                        'PAYPAY': 'PayPay',
-                        'PAYPAY_MERCHANT': 'PayPay (加盟店)',
-                        'BANK': '銀行振込',
-                        'CASH': '現金支払い',
-                    };
-                    const paymentMethodName = paymentMethodMap[status.payment_method as string] || status.payment_method as string;
-                    const paidDate = new Date(paidAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
-
-                    await sendPaymentCompleteEmail(
-                        status.user_id as string,
-                        status.email as string,
-                        status.event_name as string,
-                        status.amount_due as number,
-                        paymentMethodName,
-                        paidDate
-                    );
+                    // Email sending disabled to save email quota
+                    // const paymentMethodName = getPaymentMethodLabel(status.payment_method as string);
+                    // const paidDate = new Date(paidAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+                    // await sendPaymentCompleteEmail(
+                    //     status.user_id as string,
+                    //     status.email as string,
+                    //     status.event_name as string,
+                    //     status.amount_due as number,
+                    //     paymentMethodName,
+                    //     paidDate
+                    // );
                 }
             }
         } else if (state === 'FAILED' || state === 'CANCELED') {

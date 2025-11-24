@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { PAYMENT_METHOD_LABELS } from '@/lib/payment-methods';
 
 export async function GET(
     request: Request,
@@ -37,7 +38,7 @@ export async function GET(
         paymentMethods.push({
             id: 'CASH',
             type: 'CASH',
-            name: '現金支払い',
+            name: PAYMENT_METHOD_LABELS.CASH,
         });
 
         return NextResponse.json({

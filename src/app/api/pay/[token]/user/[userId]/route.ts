@@ -166,3 +166,49 @@ export async function GET(
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function PUT(
+    request: Request,
+    { params }: { params: Promise<{ token: string; userId: string }> }
+) {
+    const { token, userId: paymentUserId } = await params;
+
+    try {
+        const eventResult = await db.execute({
+            sql: 'SELECT id FROM events WHERE payment_token = ? AND is_active = 1',
+            args: [token],
+        });
+
+        if (eventResult.rows.length === 0) {
+            return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+        }
+
+        const event = eventResult.rows[0];
+
+        const statusResult = await db.execute({
+            sql: 'SELECT id, status FROM payment_status WHERE payment_user_id = ? AND event_id = ?',
+            args: [paymentUserId, event.id],
+        });
+
+        if (statusResult.rows.length === 0) {
+            return NextResponse.json({ error: 'Payment status not found' }, { status: 404 });
+        }
+
+        const currentStatus = statusResult.rows[0].status as string;
+        if (currentStatus === 'PAID') {
+            return NextResponse.json({ error: 'Already paid' }, { status: 400 });
+        }
+
+        const statusId = statusResult.rows[0].id as string;
+
+        await db.execute({
+            sql: 'UPDATE payment_status SET status = ? WHERE id = ?',
+            args: ['PAID', statusId],
+        });
+
+        return NextResponse.json({ success: true, status: 'PAID' });
+    } catch (e) {
+        console.error('Failed to update payment status:', e);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}

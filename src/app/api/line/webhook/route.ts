@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { lineClient } from '@/lib/line';
 import { saveLineMessage, getMessageHistory } from '@/lib/line-messages';
 import { createEventFromMessages } from '@/lib/llm';
+import { getPaymentMethodLabelForLine } from '@/lib/payment-methods';
 import { randomUUID } from 'crypto';
 import * as crypto from 'crypto';
 
@@ -325,16 +326,8 @@ export async function POST(request: Request) {
                             for (const config of configsResult.rows) {
                                 const configType = config.type as string;
                                 const configName = config.name as string;
-
-                                if (configType === 'PAYPAY') {
-                                    paymentMethodLines.push(`  - ${configName} (PayPay)`);
-                                } else if (configType === 'PAYPAY_MERCHANT') {
-                                    paymentMethodLines.push(`  - ${configName} (PayPay加盟店)`);
-                                } else if (configType === 'STRIPE') {
-                                    paymentMethodLines.push(`  - ${configName} (Stripe)`);
-                                } else if (configType === 'BANK') {
-                                    paymentMethodLines.push(`  - ${configName} (銀行振込)`);
-                                }
+                                const methodLabel = getPaymentMethodLabelForLine(configType);
+                                paymentMethodLines.push(`  - ${configName} (${methodLabel})`);
                             }
                         } else {
                             paymentMethodLines.push('💳 決済方法: 現金支払い');
