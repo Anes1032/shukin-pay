@@ -193,17 +193,17 @@ export default function PaymentUserModal({ isOpen, onClose, onSuccess, eventId, 
         <Modal isOpen={isOpen} onClose={onClose} title={t('editPaymentUser', { ns: 'dashboard' })}>
             <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto">
                 {error && (
-                    <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{error}</div>
+                    <div className="bg-red-50 text-red-600 p-3 rounded text-xs md:text-sm">{error}</div>
                 )}
 
                 {isPaid && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs md:text-sm text-yellow-800">
                         {t('cannotEditPaidUser', { ns: 'dashboard' })}
                     </div>
                 )}
 
                 <div>
-                    <label className="block text-gray-700 mb-1">{t('table.name', { ns: 'dashboard' })}</label>
+                    <label className="block text-gray-700 mb-1 text-sm md:text-base">{t('table.name', { ns: 'dashboard' })}</label>
                     <input
                         type="text"
                         value={name}
@@ -211,24 +211,24 @@ export default function PaymentUserModal({ isOpen, onClose, onSuccess, eventId, 
                         disabled={!canEdit}
                         required
                         placeholder={t('namePlaceholder', { ns: 'pay' })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm md:text-base"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-gray-700 mb-1">{t('table.email', { ns: 'dashboard' })}</label>
+                    <label className="block text-gray-700 mb-1 text-sm md:text-base">{t('table.email', { ns: 'dashboard' })}</label>
                     <input
                         type="email"
                         value={initialData?.email || ''}
                         disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100 cursor-not-allowed"
+                        className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100 cursor-not-allowed text-sm md:text-base"
                     />
                     <p className="text-gray-500 text-xs mt-1">{t('emailCannotBeChanged', { ns: 'dashboard' })}</p>
                 </div>
 
                 {event.conditions.map((condition) => (
                     <div key={condition.id}>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-2">
                             {condition.name}
                         </label>
                         <div className="space-y-2">
@@ -270,7 +270,7 @@ export default function PaymentUserModal({ isOpen, onClose, onSuccess, eventId, 
                 ))}
 
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-2">
                         {t('paymentMethod', { ns: 'pay' })} <span className="text-red-500">{t('required', { ns: 'pay' })}</span>
                     </label>
                     <div className="space-y-2">
@@ -301,22 +301,22 @@ export default function PaymentUserModal({ isOpen, onClose, onSuccess, eventId, 
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-200">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-3 md:p-4 border border-blue-200">
                     <div className="flex justify-between items-center">
-                        <span className="text-lg font-semibold text-gray-700">{t('paymentAmount', { ns: 'pay' })}</span>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        <span className="text-sm md:text-lg font-semibold text-gray-700">{t('paymentAmount', { ns: 'pay' })}</span>
+                        <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                             ¥{calculateTotal().toLocaleString()}
                         </span>
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-gray-700 mb-1">{t('table.status', { ns: 'dashboard' })}</label>
+                    <label className="block text-gray-700 mb-1 text-sm md:text-base">{t('table.status', { ns: 'dashboard' })}</label>
                     <select
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
                         disabled={!canEdit}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm md:text-base"
                     >
                         <option value="UNPAID">{t('status.unpaid', { ns: 'dashboard' })}</option>
                         <option value="PENDING">{t('status.pending', { ns: 'dashboard' })}</option>
@@ -328,14 +328,14 @@ export default function PaymentUserModal({ isOpen, onClose, onSuccess, eventId, 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                        className="px-3 md:px-4 py-1.5 md:py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm md:text-base"
                     >
                         {t('cancel', { ns: 'common' })}
                     </button>
                     <button
                         type="submit"
                         disabled={loading || !canEdit || calculateTotal() === 0}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 md:px-4 py-1.5 md:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
                     >
                         {loading ? t('saving', { ns: 'dashboard' }) : t('save', { ns: 'common' })}
                     </button>

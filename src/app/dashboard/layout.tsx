@@ -44,57 +44,57 @@ export default function DashboardLayout({
         <I18nProvider>
             <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
                 <header className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200/50 sticky top-0 z-40">
-                    <div className="flex items-center justify-between px-6 py-4">
-                        <Link href="/dashboard" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all">
+                    <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4">
+                        <Link href="/dashboard" className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all">
                             {t('shukinPay', { ns: 'common' })}
                         </Link>
                         <div ref={menuRef} className="relative">
                             <button
                                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                className="flex flex-col gap-1.5 p-2.5 hover:bg-gray-100 rounded-lg transition-all"
+                                className="flex flex-col gap-1.5 p-2 hover:bg-gray-100 rounded-lg transition-all"
                                 aria-label={t('menu', { ns: 'admin' })}
                             >
-                                <span className={`w-6 h-0.5 bg-gray-700 transition-all ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-                                <span className={`w-6 h-0.5 bg-gray-700 transition-all ${isMenuOpen ? 'opacity-0' : ''}`}></span>
-                                <span className={`w-6 h-0.5 bg-gray-700 transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+                                <span className={`w-5 md:w-6 h-0.5 bg-gray-700 transition-all ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+                                <span className={`w-5 md:w-6 h-0.5 bg-gray-700 transition-all ${isMenuOpen ? 'opacity-0' : ''}`}></span>
+                                <span className={`w-5 md:w-6 h-0.5 bg-gray-700 transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
                             </button>
 
                             {isMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl py-2 z-50 border border-gray-200/50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="absolute right-0 mt-2 w-56 md:w-64 bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl py-2 z-50 border border-gray-200/50 animate-in fade-in slide-in-from-top-2 duration-200">
                                     <button
-                                        className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3"
+                                        className="w-full text-left px-4 py-2.5 md:py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3 text-sm md:text-base"
                                         onClick={() => { setIsPaymentModalOpen(true); setIsMenuOpen(false); }}
                                     >
-                                        <span className="text-xl">💳</span>
+                                        <span className="text-lg md:text-xl">💳</span>
                                         {t('paymentInfo', { ns: 'admin' })}
                                     </button>
                                     <button
-                                        className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3"
+                                        className="w-full text-left px-4 py-2.5 md:py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3 text-sm md:text-base"
                                         onClick={() => { setIsGmailModalOpen(true); setIsMenuOpen(false); }}
                                     >
-                                        <span className="text-xl">📧</span>
+                                        <span className="text-lg md:text-xl">📧</span>
                                         {t('gmailAuth', { ns: 'admin' })}
                                     </button>
                                     <button
-                                        className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3"
+                                        className="w-full text-left px-4 py-2.5 md:py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3 text-sm md:text-base"
                                         onClick={() => { setIsLineModalOpen(true); setIsMenuOpen(false); }}
                                     >
-                                        <span className="text-xl">💬</span>
+                                        <span className="text-lg md:text-xl">💬</span>
                                         {t('lineAuth', { ns: 'admin' })}
                                     </button>
                                     <button
-                                        className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3"
+                                        className="w-full text-left px-4 py-2.5 md:py-3 hover:bg-gray-50 text-gray-700 transition-colors flex items-center gap-3 text-sm md:text-base"
                                         onClick={() => { setIsPasswordModalOpen(true); setIsMenuOpen(false); }}
                                     >
-                                        <span className="text-xl">🔒</span>
+                                        <span className="text-lg md:text-xl">🔒</span>
                                         {t('changePassword', { ns: 'admin' })}
                                     </button>
                                     <div className="border-t border-gray-200 my-2"></div>
                                     <button
-                                        className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 transition-colors flex items-center gap-3"
+                                        className="w-full text-left px-4 py-2.5 md:py-3 hover:bg-red-50 text-red-600 transition-colors flex items-center gap-3 text-sm md:text-base"
                                         onClick={handleLogout}
                                     >
-                                        <span className="text-xl">🚪</span>
+                                        <span className="text-lg md:text-xl">🚪</span>
                                         {t('logout', { ns: 'common' })}
                                     </button>
                                 </div>
@@ -102,7 +102,7 @@ export default function DashboardLayout({
                         </div>
                     </div>
                 </header>
-                <main className="max-w-7xl mx-auto px-6 py-8">{children}</main>
+                <main className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">{children}</main>
 
                 <PaymentInfoModal
                     isOpen={isPaymentModalOpen}

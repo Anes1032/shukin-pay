@@ -156,44 +156,44 @@ export default function EventModal({ isOpen, onClose, onSuccess }: Props) {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={t('eventCreateTitle', { ns: 'dashboard' })}>
-            <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 max-h-[70vh] overflow-y-auto">
                 <div>
-                    <label className="block text-gray-700 mb-1 font-semibold">{t('eventName', { ns: 'dashboard' })}</label>
+                    <label className="block text-gray-700 mb-1 font-semibold text-sm md:text-base">{t('eventName', { ns: 'dashboard' })}</label>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                         placeholder={t('eventNamePlaceholder', { ns: 'dashboard' })}
                     />
                 </div>
 
                 <div>
-                    <label className="block text-gray-700 mb-1 font-semibold">{t('eventDate', { ns: 'dashboard' })}</label>
+                    <label className="block text-gray-700 mb-1 font-semibold text-sm md:text-base">{t('eventDate', { ns: 'dashboard' })}</label>
                     <input
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-gray-700 mb-1 font-semibold">{t('baseAmount', { ns: 'dashboard' })}</label>
+                    <label className="block text-gray-700 mb-1 font-semibold text-sm md:text-base">{t('baseAmount', { ns: 'dashboard' })}</label>
                     <input
                         type="number"
                         value={baseAmount}
                         onChange={(e) => setBaseAmount(parseInt(e.target.value) || 0)}
                         min="0"
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                         placeholder={t('baseAmountPlaceholder', { ns: 'dashboard' })}
                     />
                     <p className="text-gray-500 text-xs mt-1">{t('baseAmountDescription', { ns: 'dashboard' })}</p>
                 </div>
 
                 <div>
-                    <label className="block text-gray-700 mb-2 font-semibold">{t('paymentMethod', { ns: 'dashboard' })}</label>
+                    <label className="block text-gray-700 mb-2 font-semibold text-sm md:text-base">{t('paymentMethod', { ns: 'dashboard' })}</label>
                     <div className="space-y-2 border border-gray-300 rounded p-3">
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -219,21 +219,21 @@ export default function EventModal({ isOpen, onClose, onSuccess }: Props) {
                 </div>
 
                 <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <label className="block text-gray-700 font-semibold">{t('amountCondition', { ns: 'dashboard' })}</label>
+                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                        <label className="block text-gray-700 font-semibold text-sm md:text-base">{t('amountCondition', { ns: 'dashboard' })}</label>
                         {!condition && (
                         <div className="flex gap-2">
                             <button
                                 type="button"
                                     onClick={() => setConditionType('radio')}
-                                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                className="px-2 md:px-3 py-1 text-xs md:text-sm bg-green-600 text-white rounded hover:bg-green-700"
                             >
                                     {t('addRadioButton', { ns: 'dashboard' })}
                             </button>
                             <button
                                 type="button"
                                     onClick={() => setConditionType('checkbox')}
-                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                className="px-2 md:px-3 py-1 text-xs md:text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                             >
                                     {t('addCheckbox', { ns: 'dashboard' })}
                             </button>
@@ -308,13 +308,13 @@ export default function EventModal({ isOpen, onClose, onSuccess }: Props) {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                        className="px-3 md:px-4 py-1.5 md:py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm md:text-base"
                     >
                         {t('cancel', { ns: 'common' })}
                     </button>
                     <button
                         type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        className="px-3 md:px-4 py-1.5 md:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm md:text-base"
                     >
                         {t('create', { ns: 'dashboard' })}
                     </button>

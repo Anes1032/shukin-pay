@@ -52,22 +52,22 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, eventId }: Pr
         <Modal isOpen={isOpen} onClose={onClose} title={t('addPaymentUser', { ns: 'dashboard' })}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
-                    <div className="bg-red-50 text-red-600 p-3 rounded text-sm">{error}</div>
+                    <div className="bg-red-50 text-red-600 p-3 rounded text-xs md:text-sm">{error}</div>
                 )}
 
                 <div>
-                    <label className="block text-gray-700 mb-1">{t('email', { ns: 'common' })}</label>
+                    <label className="block text-gray-700 mb-1 text-sm md:text-base">{t('email', { ns: 'common' })}</label>
                     <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                         placeholder={t('addUserEmailPlaceholder', { ns: 'dashboard' })}
                     />
                 </div>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-xs md:text-sm text-gray-500">
                     {t('addUserDescription', { ns: 'dashboard' })}
                 </p>
 
@@ -75,14 +75,14 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, eventId }: Pr
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                        className="px-3 md:px-4 py-1.5 md:py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm md:text-base"
                     >
                         {t('cancel', { ns: 'common' })}
                     </button>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                        className="px-3 md:px-4 py-1.5 md:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm md:text-base"
                     >
                         {loading ? t('sending', { ns: 'dashboard' }) : t('addAndSend', { ns: 'dashboard' })}
                     </button>

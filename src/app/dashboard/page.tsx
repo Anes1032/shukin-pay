@@ -125,11 +125,11 @@ export default function DashboardPage() {
     const currentEvent = events.find(e => e.id === selectedEvent);
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-gray-200/50">
-                <div className="flex flex-wrap items-center gap-4">
+        <div className="space-y-4 md:space-y-6">
+            <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg p-4 md:p-6 border border-gray-200/50">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 md:gap-4">
                     <select
-                        className="flex-1 min-w-[200px] px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all"
+                        className="flex-1 min-w-0 sm:min-w-[200px] px-4 py-2.5 md:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all text-sm md:text-base"
                         value={selectedEvent}
                         onChange={(e) => setSelectedEvent(e.target.value)}
                     >
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                     </select>
                     <button
                         onClick={() => setIsEventModalOpen(true)}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg font-medium flex items-center gap-2 text-sm"
+                        className="w-full sm:w-auto px-4 py-2.5 md:py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2 text-sm"
                     >
                         <span>+</span>
                         {t('addEvent', { ns: 'dashboard' })}
@@ -148,18 +148,18 @@ export default function DashboardPage() {
             </div>
 
             {currentEvent && (
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200/50 shadow-sm">
-                    <div className="flex items-start gap-3">
-                        <span className="text-2xl">🔗</span>
-                        <div className="flex-1">
-                            <p className="font-semibold text-gray-700 mb-2">{t('paymentLink', { ns: 'dashboard' })}</p>
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4 md:p-6 border border-blue-200/50 shadow-sm">
+                    <div className="flex items-start gap-2 md:gap-3">
+                        <span className="text-xl md:text-2xl">🔗</span>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-700 mb-2 text-sm md:text-base">{t('paymentLink', { ns: 'dashboard' })}</p>
                             <div
                                 onClick={copyPaymentLink}
-                                className="flex items-center gap-2 text-sm text-gray-600 break-all font-mono bg-white/50 px-3 py-2 rounded-lg cursor-pointer hover:bg-white/80 transition-colors group"
+                                className="flex items-center gap-2 text-xs md:text-sm text-gray-600 break-all font-mono bg-white/50 px-2 md:px-3 py-1.5 md:py-2 rounded-lg cursor-pointer hover:bg-white/80 transition-colors group"
                             >
-                                <span className="flex-1">{`${window.location.origin}/pay/${currentEvent.payment_token}`}</span>
+                                <span className="flex-1 min-w-0 truncate">{`${window.location.origin}/pay/${currentEvent.payment_token}`}</span>
                                 <svg
-                                    className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0"
+                                    className="w-4 h-4 md:w-5 md:h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -173,38 +173,39 @@ export default function DashboardPage() {
             )}
 
             <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg overflow-hidden border border-gray-200/50">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-700">{t('paymentUsers', { ns: 'dashboard' })}</h2>
+                <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 gap-3">
+                    <h2 className="text-base md:text-lg font-semibold text-gray-700 flex-shrink-0">{t('paymentUsers', { ns: 'dashboard' })}</h2>
                     {selectedEvent && (
                         <button
                             onClick={() => setIsAddUserModalOpen(true)}
-                            className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-medium flex items-center gap-2 text-sm"
+                            className="px-3 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-medium flex items-center gap-2 text-xs md:text-sm whitespace-nowrap"
                         >
                             <span>+</span>
                             {t('addUser', { ns: 'dashboard' })}
                         </button>
                     )}
                 </div>
+                
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                                <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700">
                                     {t('table.name', { ns: 'dashboard' })}
                                 </th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                                <th className="hidden md:table-cell px-6 py-4 text-left text-sm font-semibold text-gray-700">
                                     {t('table.email', { ns: 'dashboard' })}
                                 </th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                                <th className="hidden md:table-cell px-6 py-4 text-left text-sm font-semibold text-gray-700">
                                     {t('table.amount', { ns: 'dashboard' })}
                                 </th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                                <th className="hidden md:table-cell px-6 py-4 text-left text-sm font-semibold text-gray-700">
                                     {t('table.method', { ns: 'dashboard' })}
                                 </th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                                <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700">
                                     {t('table.status', { ns: 'dashboard' })}
                                 </th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                                <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-gray-700">
                                     {t('table.actions', { ns: 'dashboard' })}
                                 </th>
                             </tr>
@@ -213,26 +214,26 @@ export default function DashboardPage() {
                             {paymentUsers.map(user => (
                                 <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                                     <td 
-                                        className="px-6 py-4 text-gray-800 cursor-pointer"
+                                        className="px-3 md:px-6 py-3 md:py-4 text-gray-800 cursor-pointer text-sm md:text-base"
                                         onClick={() => openPaymentUserModal(user)}
                                     >
                                         {user.name}
                                     </td>
-                                    <td className="px-6 py-4 text-gray-600">{user.email}</td>
-                                    <td className="px-6 py-4 text-gray-800 font-semibold">
+                                    <td className="hidden md:table-cell px-6 py-4 text-gray-600">{user.email}</td>
+                                    <td className="hidden md:table-cell px-6 py-4 text-gray-800 font-semibold">
                                         ¥{user.amount_due?.toLocaleString() || 0}
                                     </td>
-                                    <td className="px-6 py-4 text-gray-600">{user.payment_method || '-'}</td>
-                                    <td className="px-6 py-4">
+                                    <td className="hidden md:table-cell px-6 py-4 text-gray-600">{user.payment_method || '-'}</td>
+                                    <td className="px-3 md:px-6 py-3 md:py-4">
                                         {user.status === 'PAID' ? (
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                            <span className="inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
                                                 ✓ {t('status.paid', { ns: 'dashboard' })}
                                             </span>
                                         ) : (
                                             <select
                                                 value={user.status}
                                                 onChange={(e) => handleStatusChange(user.id, e.target.value)}
-                                                className={`text-xs font-semibold px-3 py-1 rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${
+                                                className={`text-xs font-semibold px-2 md:px-3 py-1 rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${
                                                 user.status === 'UNPAID' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
                                                 }`}
                                             >
@@ -242,18 +243,18 @@ export default function DashboardPage() {
                                             </select>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-3 md:px-6 py-3 md:py-4">
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => openPaymentUserModal(user)}
-                                                className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+                                                className="text-blue-600 hover:text-blue-800 text-sm md:text-base cursor-pointer"
                                             >
                                                 ✏️
                                             </button>
                                             {user.status !== 'PAID' && (
                                                 <button
                                                     onClick={() => handleDelete(user.id)}
-                                                    className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+                                                    className="text-red-600 hover:text-red-800 text-sm md:text-base cursor-pointer"
                                                 >
                                                     🗑️
                                                 </button>
@@ -264,10 +265,10 @@ export default function DashboardPage() {
                             ))}
                             {paymentUsers.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center">
+                                    <td colSpan={6} className="px-4 md:px-6 py-12 text-center">
                                         <div className="flex flex-col items-center gap-3 text-gray-400">
                                             <span className="text-4xl">📭</span>
-                                            <p>{t('noPaymentUsers', { ns: 'dashboard' })}</p>
+                                            <p className="text-sm md:text-base">{t('noPaymentUsers', { ns: 'dashboard' })}</p>
                                         </div>
                                     </td>
                                 </tr>
