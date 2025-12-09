@@ -55,7 +55,7 @@ export async function createEventFromMessages(messageHistory: string[]): Promise
         ],
         max_completion_tokens: 1024,
         response_format: { type: 'json_object' as const },
-        reasoning_effort: "minimal"
+        reasoning_effort: 'low'
     };
     console.log('requestParams:', requestParams);
     const completion = await openai.chat.completions.create(requestParams as never);
