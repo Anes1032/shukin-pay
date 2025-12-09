@@ -21,7 +21,6 @@ export async function createPayPayPayment(
 ): Promise<PayPayPaymentResult> {
     const { apiKey, apiSecret, merchantId } = config;
 
-    // Configure PayPay SDK
     PAYPAY.Configure({
         clientId: apiKey,
         clientSecret: apiSecret,

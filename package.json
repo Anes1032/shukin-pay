@@ -20,7 +20,7 @@
     "i18next": "^25.6.3",
     "i18next-resources-to-backend": "^1.2.1",
     "jsonwebtoken": "^9.0.2",
-    "next": "16.0.3",
+    "next": "^16.0.8",
     "nodemailer": "^7.0.10",
     "openai": "^6.9.1",
     "react": "19.2.0",
