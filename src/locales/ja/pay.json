@@ -60,5 +60,5 @@
     "markComplete": "支払い完了",
     "markingComplete": "更新中...",
     "markCompleteFailed": "支払い完了の更新に失敗しました",
-    "paymentMarkedComplete": "✓ 支払い完了としてマークされました"
+    "paymentCompleted": "決済完了"
 }

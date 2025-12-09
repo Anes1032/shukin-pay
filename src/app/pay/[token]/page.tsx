@@ -606,7 +606,7 @@ export default function PaymentPage({ params }: { params: Promise<{ token: strin
                                 {paymentStatus === 'PAID' && (
                                     <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-3">
                                         <p className="text-green-700 font-medium text-center">
-                                            {t('paymentMarkedComplete', { ns: 'pay' })}
+                                            {t('paymentCompleted', { ns: 'pay' })}
                                         </p>
                                     </div>
                                 )}
