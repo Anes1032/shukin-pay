@@ -48,7 +48,7 @@ export async function createEventFromMessages(messageHistory: string[]): Promise
         .replace('{current_time}', jstTimeStr);
 
     const requestParams = {
-        model: 'gpt-5-mini',
+        model: 'gpt-5.1',
         messages: [
             { role: 'system' as const, content: systemPrompt },
             { role: 'user' as const, content: userPrompt },
